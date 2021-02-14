@@ -9,6 +9,7 @@
 class PassThrough {
 
     public:
+    PassThrough();
 
     //Constructor takes in axis, min, max
     PassThrough(char axis, float min, float max);

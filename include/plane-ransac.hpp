@@ -22,6 +22,7 @@ class RansacPlane {
         the most data using the RANSAC algorithm
         */
         RansacPlane(sl::float3 axis, float epsilon, int iterations, float threshold,  int pcSize);
+        RansacPlane();
 
         ~RansacPlane();
 

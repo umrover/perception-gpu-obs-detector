@@ -359,6 +359,7 @@ __global__ void removeInliers(GPU_Cloud_F4 pc, GPU_Cloud_F4 out, int* optimalMod
 
 }
 
+RansacPlane() {}
 
 RansacPlane::RansacPlane(sl::float3 axis, float epsilon, int iterations, float threshold, int pcSize)
 : pc(pc), axis(axis), epsilon(epsilon), iterations(iterations), threshold(threshold)  {
