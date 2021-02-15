@@ -1,3 +1,0 @@
-
-void nextFrame();
-void prevFrame();

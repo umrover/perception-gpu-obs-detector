@@ -1,6 +1,9 @@
 #include <string>
 #include <fstream>
 #include <sl/Camera.hpp>
+#include <dirent.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 using namespace std;
 

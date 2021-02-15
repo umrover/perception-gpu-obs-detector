@@ -1,6 +1,9 @@
 #include <string>
-#include <Camera.h>
+#include <sl/Camera.hpp>
 #include "recorder.hpp"
+#include "plane-ransac.hpp"
+#include "pass-through.hpp"
+#include "GLViewer.hpp"
 
 /*
  *** Determines where to input clouds for obstacle detection ***
@@ -18,7 +21,7 @@ enum OperationMode {MODE_DEBUG, MODE_SILENT};
 /*
  *** Choose which viewer to use ***
  */
-enum ViewerType {VIEWER_NONE, VIWER_PCL, VIEWER_GL};
+enum ViewerType {VIEWER_NONE, VIEWER_PCL, VIEWER_GL};
 
 class ObsDetector {
     public:
@@ -43,7 +46,12 @@ class ObsDetector {
 
 
     private: 
+        //Data sources
+        sl::Camera zed;
+
         //Viwers
+        GLViewer glViewer;
+
 
         //Operation paramaters
         DataSource source;
@@ -54,7 +62,6 @@ class ObsDetector {
         //Detection algorithms 
         PassThrough passZ;
         RansacPlane ransacPlane;
-
 
         //Paramaters
         sl::Resolution cloud_res;
