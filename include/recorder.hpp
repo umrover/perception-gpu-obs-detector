@@ -39,11 +39,11 @@ class Recorder {
 
 class Reader {
     public:
-        Reader(string dir) : dir(dir) {
-            readData(dir);
+        Reader() : dir("") {
         }
         
-        void readData(string dir) {	
+        void open(string dir) {	
+            this->dir = dir;
             map<int, string> fData;
 
             //Long-winded directory opening (no glob, sad)

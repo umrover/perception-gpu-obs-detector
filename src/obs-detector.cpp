@@ -1,31 +1,39 @@
 #include "obs-detector.h"
+using namespace std;
 
 ObsDetector::ObsDetector(DataSource source, OperationMode mode, ViewerType viewer) : source(source), mode(mode), viewer(viewer), record(false)
 {
     setupParamaters("");
 
-    if(source == SOURCE_ZED) {
+    if(source == DataSource::ZED) {
         zed.open(init_params); 
         auto camera_config = zed.getCameraInformation(cloud_res).camera_configuration;
         defParams = camera_config.calibration_parameters.left_cam;
-    } else if(source == SOURCE_FILESYSTEM) {
-
+    } else if(source == DataSource::FILESYSTEM) {
+        fileReader.open(readDir);
     }
 
-    if(viewer == VIEWER_PCL) {
+    if(mode != OperationMode::SILENT && viewer == ViewerType::PCL) {
         //readData(); 
         //setPointCloud(0); 
         //pclViewer = createRGBVisualizer(pc_pcl);
 
-    } else if(viewer == VIEWER_GL) {
-        glViewer.init(0, nullptr, defParams);
+    } else if(mode != OperationMode::SILENT && viewer == ViewerType::GL) {
+        int argc = 1;
+        char *argv[1] = {(char*)"Window"};
+        glViewer.init(argc, argv, defParams);
+        //graphicsThread = std::thread( [this] { this->spinViewer(); } );
+        //graphicsThread.detach();
     }
 };
 
 //TODO: Make it read params from a file
 void ObsDetector::setupParamaters(std::string parameterFile) {
+    //Operating resolution
     cloud_res = sl::Resolution(320/2, 180/2);
+    readDir = "../data/";
 
+    //Zed params
     init_params.coordinate_units = sl::UNIT::MILLIMETER;
     init_params.camera_resolution = sl::RESOLUTION::VGA; 
     init_params.camera_fps = 100;
@@ -38,15 +46,46 @@ void ObsDetector::setupParamaters(std::string parameterFile) {
     defParams.image_size.width = 160;
     defParams.image_size.height = 90;
 
-    //Algos
+    //Obs Detecting Algorithm Params
     passZ = PassThrough('z', 200.0, 7000.0);
-    ransacPlane = RansacPlane(sl::float3(0, 1, 0), 7, 400, 150, cloud_res.area()); 
+    ransacPlane = RansacPlane(sl::float3(0, 1, 0), 7, 400, 150, cloud_res.area());
+    ece = EuclideanClusterExtractor(100, 50, 0, cloud_res.area(), 9); 
 }
 
 void ObsDetector::update() {
+    sl::Mat frame;
 
+    // Get the next frame from ZED
+    if(source == DataSource::ZED) {
+
+    }
+    // Get the next frame from a file
+    else if(source == DataSource::FILESYSTEM) {
+        fileReader.load(frameNum, frame);
+    }
+
+    if(viewer == ViewerType::GL) {
+        glViewer.updatePointCloud(frame);
+    }
+
+    frameNum++;
+}
+
+void ObsDetector::spinViewer() {
+    glViewer.isAvailable();
+    //while(glViewer.isAvailable()) {
+        //std::this_thread::sleep_for (std::chrono::milliseconds(10));
+        //updateRansacPlane(planePoints.p1, planePoints.p2, planePoints.p3, 600.5);
+        //updateObjectBoxes(obstacles.size, obstacles.minX, obstacles.maxX, obstacles.minY, obstacles.maxY, obstacles.minZ, obstacles.maxZ );
+    //}
 }
 
 int main() {
+    ObsDetector obs(DataSource::FILESYSTEM, OperationMode::DEBUG, ViewerType::GL);
+    //std::thread viewer(obs.spinViewer);
+    while(true) {
+        //cout << "hi" << endl;
+        obs.spinViewer();
+    }
     return 0;
 }

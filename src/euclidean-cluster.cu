@@ -883,13 +883,13 @@ private:
     int min;
 };
 
-EuclideanClusterExtractor::EuclideanClusterExtractor(float tolerance, int minSize, float maxSize, GPU_Cloud_F4 pc, int partitions) 
+EuclideanClusterExtractor::EuclideanClusterExtractor(float tolerance, int minSize, float maxSize, size_t cloudArea, int partitions) 
 : tolerance{tolerance}, minSize{minSize}, maxSize{maxSize}, partitions{partitions} {
 
-    cudaMalloc(&listStart, sizeof(int)*(pc.size+1));
-    cudaMalloc(&labels, sizeof(int)*pc.size);
-    cudaMalloc(&f1, sizeof(bool)*pc.size);
-    cudaMalloc(&f2, sizeof(bool)*pc.size);
+    cudaMalloc(&listStart, sizeof(int)*(cloudArea+1));
+    cudaMalloc(&labels, sizeof(int)*cloudArea);
+    cudaMalloc(&f1, sizeof(bool)*cloudArea);
+    cudaMalloc(&f2, sizeof(bool)*cloudArea);
     cudaMalloc(&stillGoing, sizeof(bool));
 
     //Nearest Neighbor Bins
@@ -898,7 +898,9 @@ EuclideanClusterExtractor::EuclideanClusterExtractor(float tolerance, int minSiz
 
    // colorClusters<<<ceilDiv(pc.size, MAX_THREADS), MAX_THREADS>>>(pc, nullptr);
 }
+EuclideanClusterExtractor::EuclideanClusterExtractor() {
 
+};
 
 //perhaps use dynamic parallelism 
 EuclideanClusterExtractor::ObsReturn EuclideanClusterExtractor::extractClusters(GPU_Cloud_F4 pc) {

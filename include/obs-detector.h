@@ -4,6 +4,8 @@
 #include "plane-ransac.hpp"
 #include "pass-through.hpp"
 #include "GLViewer.hpp"
+#include "euclidean-cluster.hpp"
+#include <thread>
 
 /*
  *** Determines where to input clouds for obstacle detection ***
@@ -11,17 +13,17 @@
  *      SOURCE_GPUMEM: receives a pointer to cloud GPU memory from external source
  *      SOURCE_FILESYSTEM: reads .pc files from specified location
  */
-enum DataSource {SOURCE_ZED, SOURCE_GPUMEM, SOURCE_FILESYSTEM}; 
+enum class DataSource {ZED, GPUMEM, FILESYSTEM}; 
 
 /*
  *** Set up debugging level ***
  */
-enum OperationMode {MODE_DEBUG, MODE_SILENT};
+enum class OperationMode {DEBUG, SILENT};
 
 /*
  *** Choose which viewer to use ***
  */
-enum ViewerType {VIEWER_NONE, VIEWER_PCL, VIEWER_GL};
+enum ViewerType {NONE, PCL, GL};
 
 class ObsDetector {
     public:
@@ -37,9 +39,13 @@ class ObsDetector {
         //Grabs the next frame and performs an obstacle detection
         void update();
 
+        //Do viewer tick
+        void spinViewer();
+
+
     private:
         //Do viewer tick 
-        void updateViewer();
+        //void spinViewer();
 
         //Sets up detection paramaters from an XML file
         void setupParamaters(std::string parameterFile);
@@ -48,10 +54,11 @@ class ObsDetector {
     private: 
         //Data sources
         sl::Camera zed;
+        Reader fileReader;
 
         //Viwers
+        std::thread graphicsThread;
         GLViewer glViewer;
-
 
         //Operation paramaters
         DataSource source;
@@ -62,11 +69,19 @@ class ObsDetector {
         //Detection algorithms 
         PassThrough passZ;
         RansacPlane ransacPlane;
+        EuclideanClusterExtractor ece;
 
         //Paramaters
         sl::Resolution cloud_res;
         sl::InitParameters init_params;
         sl::CameraParameters defParams;
+        std::string readDir;
+        
+        //Output data
+        RansacPlane::Plane planePoints;
+        EuclideanClusterExtractor::ObsReturn obstacles;
 
+        //Other
+        int frameNum = 0;
         
 };
