@@ -6,6 +6,7 @@
 #include "GLViewer.hpp"
 #include "euclidean-cluster.hpp"
 #include <thread>
+#include "Timer.hpp"
 
 /*
  *** Determines where to input clouds for obstacle detection ***

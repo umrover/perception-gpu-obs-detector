@@ -57,7 +57,10 @@ void ObsDetector::update() {
 
     // Get the next frame from ZED
     if(source == DataSource::ZED) {
-
+        zed.grab();
+        zed.retrieveMeasure(frame, sl::MEASURE::XYZRGBA, sl::MEM::GPU, cloud_res); 
+      //  GPU_Cloud pc = getRawCloud(gpu_cloud);
+      //  GPU_Cloud_F4 pc_f4 = getRawCloud(gpu_cloud, true);
     }
     // Get the next frame from a file
     else if(source == DataSource::FILESYSTEM) {
@@ -83,9 +86,12 @@ void ObsDetector::spinViewer() {
 int main() {
     ObsDetector obs(DataSource::FILESYSTEM, OperationMode::DEBUG, ViewerType::GL);
     //std::thread viewer(obs.spinViewer);
+    Timer obsTimer("Obs");
     while(true) {
         //cout << "hi" << endl;
+        obsTimer.reset();
         obs.spinViewer();
+        cout << obsTimer;
     }
     return 0;
 }
