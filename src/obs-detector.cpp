@@ -67,10 +67,10 @@ void ObsDetector::update() {
     } 
 } 
 
-
+// Call this directly with ZED GPU Memory
 void ObsDetector::update(sl::Mat &frame) {
-
-    GPU_Cloud_F4 pc; //GPU processing cloud
+    // Convert ZED format into CUDA compatible 
+    GPU_Cloud_F4 pc; 
     pc = getRawCloud(frame);
 
     // Processing 
@@ -78,7 +78,7 @@ void ObsDetector::update(sl::Mat &frame) {
     ransacPlane->computeModel(pc, true);
     obstacles = ece->extractClusters(pc);
 
-    //Rendering
+    // Rendering
     if(mode != OperationMode::SILENT) {
         clearStale(pc, cloud_res.area());
         if(viewer == ViewerType::GL) {
@@ -92,6 +92,7 @@ void ObsDetector::update(sl::Mat &frame) {
 void ObsDetector::spinViewer() {
     glViewer.isAvailable();
     updateObjectBoxes(obstacles.size, obstacles.minX, obstacles.maxX, obstacles.minY, obstacles.maxY, obstacles.minZ, obstacles.maxZ );
+    updateProjectedLines(ece->bearingRight, ece->bearingLeft);
 }
 
  ObsDetector::~ObsDetector() {

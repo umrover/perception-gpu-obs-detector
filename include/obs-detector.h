@@ -41,8 +41,9 @@ class ObsDetector {
         //Stop recording
         void stopRecording();
 
-        //Grabs the next frame and performs an obstacle detection
+        // Grabs the next frame from either file or zed and performs an obstacle detection
         void update();
+        // Call this directly with ZED GPU Memory
         void update(sl::Mat &frame);
 
         //Do viewer tick
