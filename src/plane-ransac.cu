@@ -2,48 +2,6 @@
 #include "common.hpp"
 #include <stdlib.h>
 
-//These should definitely move to common.hpp but uncear on how to put device functions in header
-__device__ float getX(GPU_Cloud &pc, int index) {
-    return pc.data[pc.stride * index + 0];
-}
-
-__device__ float getY(GPU_Cloud &pc, int index) {
-    return pc.data[pc.stride * index + 1];
-}
-
-__device__ float getZ(GPU_Cloud &pc, int index) {
-    return pc.data[pc.stride * index + 2];
-}
-
-__device__ float3 getPoint(GPU_Cloud &pc, int idx) {
-    return make_float3(getX(pc, idx), getY(pc, idx), getZ(pc, idx));
-}
-
-__device__ float3 cross(float3 &a, float3 &b) { 
-    return make_float3(a.y*b.z - a.z*b.y, a.z*b.x - a.x*b.z, a.x*b.y - a.y*b.x);
-}
-
-__device__ float dot(float3 &a, float3 &b) { 
-    return a.x * b.x + a.y * b.y + a.z * b.z;
-}
-
-__device__ float norm(float3 &a) {
-    return sqrt(a.x*a.x + a.y*a.y + a.z*a.z);
-}
-
-__device__ float3 operator+(const float3 &a, const float3 &b) {
-    return make_float3(a.x+b.x, a.y+b.y, a.z+b.z);
-}
-
-__device__ float3 operator-(const float3 &a, const float3 &b) {
-    return make_float3(a.x-b.x, a.y-b.y, a.z-b.z);
-}
-
-__device__ float3 operator/(const float3 &a, const float b) {
-    return make_float3(a.x/b, a.y/b, a.z/b);
-}
-
-
 __device__ int ceilDivGPU(int a, int b) {
     return (a + b - 1) / b;
 }

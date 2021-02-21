@@ -7,6 +7,7 @@
 #include "euclidean-cluster.hpp"
 #include <thread>
 #include "Timer.hpp"
+#include "common.hpp"
 
 /*
  *** Determines where to input clouds for obstacle detection ***

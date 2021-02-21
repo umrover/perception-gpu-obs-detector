@@ -55,21 +55,22 @@ void ObsDetector::setupParamaters(std::string parameterFile) {
 void ObsDetector::update() {
     //sl::Mat frame;
     sl::Mat frame(cloud_res, sl::MAT_TYPE::F32_C4, sl::MEM::CPU);
-    // Get the next frame from ZED
+    //Get the next frame from ZED
     if(source == DataSource::ZED) {
         zed.grab();
         zed.retrieveMeasure(frame, sl::MEASURE::XYZRGBA, sl::MEM::GPU, cloud_res); 
-      //  GPU_Cloud pc = getRawCloud(gpu_cloud);
-      //  GPU_Cloud_F4 pc_f4 = getRawCloud(gpu_cloud, true);
+        GPU_Cloud_F4 pc_f4 = getRawCloud(frame);
     }
-    // Get the next frame from a file
+    //Get the next frame from a file
     else if(source == DataSource::FILESYSTEM) {
-        //frame = sl::Mat(cloud_res, sl::MAT_TYPE::F32_C4, sl::MEM::CPU);
         fileReader.load(frameNum, frame);
     }
 
-    if(viewer == ViewerType::GL) {
-        glViewer.updatePointCloud(frame);
+    //Rendering
+    if(mode != OperationMode::SILENT) {
+        if(viewer == ViewerType::GL) {
+            glViewer.updatePointCloud(frame);
+        }
     }
 
     frameNum++;
@@ -85,7 +86,7 @@ void ObsDetector::spinViewer() {
 }
 
 int main() {
-    ObsDetector obs(DataSource::FILESYSTEM, OperationMode::DEBUG, ViewerType::GL);
+    ObsDetector obs(DataSource::ZED, OperationMode::DEBUG, ViewerType::GL);
     //std::thread viewer(obs.spinViewer);
     Timer obsTimer("Obs");
     while(true) {

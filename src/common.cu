@@ -34,39 +34,7 @@ inline float convertColor(float colorIn) {
     return *reinterpret_cast<float *> (&color_uint);
 }
 
-//Taken from mrover code, creates a PCL pointcloud from a zed GPU cloud
-/*
-void ZedToPcl(pcl::PointCloud<pcl::PointXYZRGB>::Ptr & p_pcl_point_cloud, sl::Mat zed_cloud) {
-  sl::Mat zed_cloud_cpu;
-  zed_cloud.copyTo(zed_cloud_cpu,  sl::COPY_TYPE::GPU_CPU);
- 
-  float* p_data_cloud = zed_cloud_cpu.getPtr<float>();
-  int index = 0;
-  for (auto &it : p_pcl_point_cloud->points) {
-    float X = p_data_cloud[index];
-    if (!isValidMeasure(X)) // Checking if it's a valid point
-        it.x = it.y = it.z = it.rgb = 0;
-    else {
-        it.x = X;
-        it.y = p_data_cloud[index + 1];
-        it.z = p_data_cloud[index + 2];
-        it.rgb = convertColor(p_data_cloud[index + 3]); // Convert a 32bits float into a pcl .rgb format
-    }
-    index += 4;
-  }
-
-} */
-
-GPU_Cloud getRawCloud(sl::Mat zed_cloud) {
-    GPU_Cloud g;
-    g.data = zed_cloud.getPtr<float>(sl::MEM::GPU);
-    g.stride = 4;
-    g.size = zed_cloud.getWidth() * zed_cloud.getHeight();
-    return g;
-}
-
-
-GPU_Cloud_F4 getRawCloud(sl::Mat zed_cloud, bool f4) {
+GPU_Cloud_F4 getRawCloud(sl::Mat zed_cloud) {
     GPU_Cloud_F4 g;
     g.data = zed_cloud.getPtr<sl::float4>(sl::MEM::GPU);
     g.stride = 4;
