@@ -32,6 +32,9 @@ class ObsDetector {
         //Construct the obstacle detector with appropriate options
         ObsDetector(DataSource source, OperationMode mode, ViewerType viewer);
 
+        //Destructor 
+        ~ObsDetector();
+
         //Start recording
         void startRecording(std::string directory);
 
@@ -69,9 +72,9 @@ class ObsDetector {
         bool record;
 
         //Detection algorithms 
-        PassThrough passZ;
-        RansacPlane ransacPlane;
-        EuclideanClusterExtractor ece;
+        PassThrough *passZ;
+        RansacPlane *ransacPlane;
+        EuclideanClusterExtractor *ece;
 
         //Paramaters
         sl::Resolution cloud_res;

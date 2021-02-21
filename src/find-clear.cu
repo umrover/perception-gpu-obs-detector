@@ -144,7 +144,6 @@ __global__ void findClearPathKernel(float* minXG, float* maxXG, float* minZG, fl
             *rightBearing = -1;
         }
     }
-    
 }
 
 /*

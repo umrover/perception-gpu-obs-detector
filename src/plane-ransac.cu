@@ -251,7 +251,7 @@ __global__ void computeInliers(GPU_Cloud_F4 pc , int* optimalModelIndex, int* mo
         pc.data[modelPoints[*optimalModelIndex*3 + 2]].w = 3.57331108403e-43;
 
         //printf("optimal idx: %d %d %d \n",  modelPoints[*optimalModelIndex*3],  modelPoints[*optimalModelIndex*3+1], modelPoints[*optimalModelIndex*3+2]);
-    //    printf("> pt0: %f %f %f \n", modelPt0.x, modelPt0.y, modelPt0.z );
+        //printf("> pt0: %f %f %f \n", modelPt0.x, modelPt0.y, modelPt0.z );
    //     printf("> pt1: %f %f %f \n", modelPt1.x, modelPt1.y, modelPt1.z );
      //   printf("> pt2: %f %f %f \n", modelPt2.x, modelPt2.y, modelPt2.z );
 
@@ -384,6 +384,8 @@ RansacPlane::Plane RansacPlane::computeModel(GPU_Cloud_F4 pc) {
     checkStatus(cudaGetLastError());
     checkStatus(cudaDeviceSynchronize());
 
+    std::cout << "finishing ransac " << pc.size << std::endl;
+
     cudaMemcpy(selectedModel, selection, sizeof(float)*3*3, cudaMemcpyDeviceToHost);
     //for(int i = 0; i < 3; i++) {
     //    cout << "model " << i << ":" << selectedModel[0] << selected 
@@ -416,10 +418,8 @@ RansacPlane::Plane RansacPlane::computeModel(GPU_Cloud_F4 &pc, bool flag) {
     cudaFree(tmpCloud.data); //exp
    // pc.size = 320/2*180/2;
     //std::cout << sizeCpu << std::endl;
-    //might be able to use memcpyAsync() here, double check
-    checkStatus(cudaGetLastError());
-    checkStatus(cudaDeviceSynchronize());
-
+    //might be able to u
+    //cout << "b4: " << pc.size << endl;
     cudaMemcpy(selectedModel, selection, sizeof(float)*3*3, cudaMemcpyDeviceToHost);
     //for(int i = 0; i < 3; i++) {
     //    cout << "model " << i << ":" << selectedModel[0] << selected 

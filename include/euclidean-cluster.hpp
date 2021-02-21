@@ -13,7 +13,7 @@ How this ultimately should work:
 class EuclideanClusterExtractor {
     public:
         struct ObsReturn {
-            int size;
+            int size = 0;
             float* minX;
             float* maxX;
             float* minY;

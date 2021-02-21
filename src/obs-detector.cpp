@@ -47,27 +47,45 @@ void ObsDetector::setupParamaters(std::string parameterFile) {
     defParams.image_size.height = 90;
 
     //Obs Detecting Algorithm Params
-    passZ = PassThrough('z', 200.0, 7000.0);
-    ransacPlane = RansacPlane(sl::float3(0, 1, 0), 7, 400, 150, cloud_res.area());
-    ece = EuclideanClusterExtractor(100, 50, 0, cloud_res.area(), 9); 
+    passZ = new PassThrough('z', 200.0, 7000.0); //7000
+    ransacPlane = new RansacPlane(sl::float3(0, 1, 0), 7, 400, 150, cloud_res.area());
+    ece = new EuclideanClusterExtractor(100, 50, 0, cloud_res.area(), 9); 
 }
 
+
+/*
 void ObsDetector::update() {
-    //sl::Mat frame;
-    sl::Mat frame(cloud_res, sl::MAT_TYPE::F32_C4, sl::MEM::CPU);
-    //Get the next frame from ZED
+  //  if(source == sl::Mat )
+} */
+
+
+void ObsDetector::update() {
+    //sl::Mat frame(cloud_res, sl::MAT_TYPE::F32_C4, sl::MEM::CPU); //ZED Renderer frame
+    sl::Mat frame (cloud_res, sl::MAT_TYPE::F32_C4, sl::MEM::GPU);
+    GPU_Cloud_F4 pc; //GPU processing cloud
+
+    // Get the next frame from ZED
     if(source == DataSource::ZED) {
+
         zed.grab();
         zed.retrieveMeasure(frame, sl::MEASURE::XYZRGBA, sl::MEM::GPU, cloud_res); 
-        GPU_Cloud_F4 pc_f4 = getRawCloud(frame);
+        pc = getRawCloud(frame);
     }
-    //Get the next frame from a file
+    // Get the next frame from a file
     else if(source == DataSource::FILESYSTEM) {
         fileReader.load(frameNum, frame);
     }
 
+    // Processing 
+    passZ->run(pc);
+    ransacPlane->computeModel(pc, true);
+    obstacles = ece->extractClusters(pc);
+    
+
+
     //Rendering
     if(mode != OperationMode::SILENT) {
+        clearStale(pc, cloud_res.area());
         if(viewer == ViewerType::GL) {
             glViewer.updatePointCloud(frame);
         }
@@ -78,12 +96,14 @@ void ObsDetector::update() {
 
 void ObsDetector::spinViewer() {
     glViewer.isAvailable();
-    //while(glViewer.isAvailable()) {
-        //std::this_thread::sleep_for (std::chrono::milliseconds(10));
-        //updateRansacPlane(planePoints.p1, planePoints.p2, planePoints.p3, 600.5);
-        //updateObjectBoxes(obstacles.size, obstacles.minX, obstacles.maxX, obstacles.minY, obstacles.maxY, obstacles.minZ, obstacles.maxZ );
-    //}
+    updateObjectBoxes(obstacles.size, obstacles.minX, obstacles.maxX, obstacles.minY, obstacles.maxY, obstacles.minZ, obstacles.maxZ );
 }
+
+ ObsDetector::~ObsDetector() {
+     delete passZ;
+     delete ransacPlane;
+     delete ece;
+ }
 
 int main() {
     ObsDetector obs(DataSource::ZED, OperationMode::DEBUG, ViewerType::GL);
@@ -94,7 +114,6 @@ int main() {
         obsTimer.reset();
         obs.spinViewer();
         obs.update();
-       // cout << obsTimer;
     }
     return 0;
 }
