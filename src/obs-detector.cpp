@@ -53,8 +53,8 @@ void ObsDetector::setupParamaters(std::string parameterFile) {
 }
 
 void ObsDetector::update() {
-    sl::Mat frame;
-
+    //sl::Mat frame;
+    sl::Mat frame(cloud_res, sl::MAT_TYPE::F32_C4, sl::MEM::CPU);
     // Get the next frame from ZED
     if(source == DataSource::ZED) {
         zed.grab();
@@ -64,6 +64,7 @@ void ObsDetector::update() {
     }
     // Get the next frame from a file
     else if(source == DataSource::FILESYSTEM) {
+        //frame = sl::Mat(cloud_res, sl::MAT_TYPE::F32_C4, sl::MEM::CPU);
         fileReader.load(frameNum, frame);
     }
 
@@ -91,7 +92,8 @@ int main() {
         //cout << "hi" << endl;
         obsTimer.reset();
         obs.spinViewer();
-        cout << obsTimer;
+        obs.update();
+       // cout << obsTimer;
     }
     return 0;
 }

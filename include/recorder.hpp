@@ -55,9 +55,10 @@ class Reader {
             do {
                 if ((dp = readdir(pcd_dir)) != NULL) {
                     std::string file_name(dp->d_name);
-                    std::cout<<"file_name is "<<file_name<<std::endl;
                     // the lengh of the tail str is at least 4
                     if (file_name.size() < 5) continue; //make it 5 to get the single digit
+                    std::cout<<"file_name is "<<file_name<<std::endl;
+
                     pcd_names.push_back(file_name);
                     
                     int s = file_name.find_first_of("0123456789");
