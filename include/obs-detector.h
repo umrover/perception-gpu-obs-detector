@@ -43,6 +43,7 @@ class ObsDetector {
 
         //Grabs the next frame and performs an obstacle detection
         void update();
+        void update(sl::Mat &frame);
 
         //Do viewer tick
         void spinViewer();

@@ -53,35 +53,30 @@ void ObsDetector::setupParamaters(std::string parameterFile) {
 }
 
 
-/*
-void ObsDetector::update() {
-  //  if(source == sl::Mat )
-} */
-
 
 void ObsDetector::update() {
-    //sl::Mat frame(cloud_res, sl::MAT_TYPE::F32_C4, sl::MEM::CPU); //ZED Renderer frame
-    sl::Mat frame (cloud_res, sl::MAT_TYPE::F32_C4, sl::MEM::GPU);
-    GPU_Cloud_F4 pc; //GPU processing cloud
-
-    // Get the next frame from ZED
     if(source == DataSource::ZED) {
-
+        sl::Mat frame; // (cloud_res, sl::MAT_TYPE::F32_C4, sl::MEM::GPU);
         zed.grab();
         zed.retrieveMeasure(frame, sl::MEASURE::XYZRGBA, sl::MEM::GPU, cloud_res); 
-        pc = getRawCloud(frame);
-    }
-    // Get the next frame from a file
-    else if(source == DataSource::FILESYSTEM) {
+        update(frame);
+    } else if(source == DataSource::FILESYSTEM) {
+        sl::Mat frame(cloud_res, sl::MAT_TYPE::F32_C4, sl::MEM::CPU);
         fileReader.load(frameNum, frame);
-    }
+        update(frame);
+    } 
+} 
+
+
+void ObsDetector::update(sl::Mat &frame) {
+
+    GPU_Cloud_F4 pc; //GPU processing cloud
+    pc = getRawCloud(frame);
 
     // Processing 
     passZ->run(pc);
     ransacPlane->computeModel(pc, true);
     obstacles = ece->extractClusters(pc);
-    
-
 
     //Rendering
     if(mode != OperationMode::SILENT) {
@@ -106,7 +101,7 @@ void ObsDetector::spinViewer() {
  }
 
 int main() {
-    ObsDetector obs(DataSource::ZED, OperationMode::DEBUG, ViewerType::GL);
+    ObsDetector obs(DataSource::FILESYSTEM, OperationMode::DEBUG, ViewerType::GL);
     //std::thread viewer(obs.spinViewer);
     Timer obsTimer("Obs");
     while(true) {
