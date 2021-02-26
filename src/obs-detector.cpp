@@ -93,7 +93,6 @@ void ObsDetector::update(sl::Mat &frame) {
            pcl::PointCloud<pcl::PointXYZRGB>::Ptr pc_pcl(new pcl::PointCloud<pcl::PointXYZRGB>);
            ZedToPcl(pc_pcl, orig);
            pclViewer->updatePointCloud(pc_pcl); //update the viewer 
-    	   pclViewer->spinOnce(10);
         }
     }
 
@@ -101,9 +100,13 @@ void ObsDetector::update(sl::Mat &frame) {
 }
 
 void ObsDetector::spinViewer() {
-    glViewer.isAvailable();
-    updateObjectBoxes(obstacles.size, obstacles.minX, obstacles.maxX, obstacles.minY, obstacles.maxY, obstacles.minZ, obstacles.maxZ );
-    updateProjectedLines(ece->bearingRight, ece->bearingLeft);
+    if(viewer == ViewerType::GL) {
+        glViewer.isAvailable();
+        updateObjectBoxes(obstacles.size, obstacles.minX, obstacles.maxX, obstacles.minY, obstacles.maxY, obstacles.minZ, obstacles.maxZ );
+        updateProjectedLines(ece->bearingRight, ece->bearingLeft);
+    } else if(viewer == ViewerType::PCLV) {
+        pclViewer->spinOnce(10);
+    }
 }
 
  ObsDetector::~ObsDetector() {
