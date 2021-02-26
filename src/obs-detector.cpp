@@ -13,10 +13,10 @@ ObsDetector::ObsDetector(DataSource source, OperationMode mode, ViewerType viewe
         fileReader.open(readDir);
     }
 
-    if(mode != OperationMode::SILENT && viewer == ViewerType::PCL) {
-        //readData(); 
-        //setPointCloud(0); 
-        //pclViewer = createRGBVisualizer(pc_pcl);
+    if(mode != OperationMode::SILENT && viewer == ViewerType::PCLV) {
+        pcl::PointCloud<pcl::PointXYZRGB>::Ptr pc_pcl(new pcl::PointCloud<pcl::PointXYZRGB>);
+
+        pclViewer = createRGBVisualizer(pc_pcl);
 
     } else if(mode != OperationMode::SILENT && viewer == ViewerType::GL) {
         int argc = 1;
@@ -69,6 +69,12 @@ void ObsDetector::update() {
 
 // Call this directly with ZED GPU Memory
 void ObsDetector::update(sl::Mat &frame) {
+    // Get a copy if debug is enabled
+    sl::Mat orig; 
+    if(mode != OperationMode::SILENT) {
+        frame.copyTo(orig, sl::COPY_TYPE::GPU_GPU);
+    }
+
     // Convert ZED format into CUDA compatible 
     GPU_Cloud_F4 pc; 
     pc = getRawCloud(frame);
@@ -83,6 +89,11 @@ void ObsDetector::update(sl::Mat &frame) {
         clearStale(pc, cloud_res.area());
         if(viewer == ViewerType::GL) {
             glViewer.updatePointCloud(frame);
+        } else {
+           pcl::PointCloud<pcl::PointXYZRGB>::Ptr pc_pcl(new pcl::PointCloud<pcl::PointXYZRGB>);
+           ZedToPcl(pc_pcl, orig);
+           pclViewer->updatePointCloud(pc_pcl); //update the viewer 
+    	   pclViewer->spinOnce(10);
         }
     }
 
@@ -102,11 +113,10 @@ void ObsDetector::spinViewer() {
  }
 
 int main() {
-    ObsDetector obs(DataSource::FILESYSTEM, OperationMode::DEBUG, ViewerType::GL);
+    ObsDetector obs(DataSource::ZED, OperationMode::DEBUG, ViewerType::PCLV);
     //std::thread viewer(obs.spinViewer);
     Timer obsTimer("Obs");
     while(true) {
-        //cout << "hi" << endl;
         obsTimer.reset();
         obs.spinViewer();
         obs.update();

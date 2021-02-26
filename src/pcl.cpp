@@ -29,11 +29,7 @@ using namespace std;
 
 vector<string> pcd_names;
 
-shared_ptr<pcl::visualization::PCLVisualizer> pclViewer; // = pointcloud.createRGBVisualizer();
-pcl::PointCloud<pcl::PointXYZRGB>::Ptr pc_pcl(new pcl::PointCloud<pcl::PointXYZRGB>);
-
-auto &pc = pc_pcl;
-
+/*
 void readData() {	
 	map<int, string> fData;
 
@@ -95,38 +91,6 @@ void setPointCloud(int i) {
 	cerr << "> Loaded point cloud of " << pc->width << "*" << pc->height << endl;
 	DownsampleFilter();
 	cout << "Post-downsample: " << pc->width << "*" << pc->height << endl;
-}
-
-
-
-//Taken from mrover code, creates a PCL pointcloud from a zed GPU cloud
-/*
-inline float convertColor(float colorIn) {
-    uint32_t color_uint = *(uint32_t *) & colorIn;
-    unsigned char *color_uchar = (unsigned char *) &color_uint;
-    color_uint = ((uint32_t) color_uchar[0] << 16 | (uint32_t) color_uchar[1] << 8 | (uint32_t) color_uchar[2]);
-    return *reinterpret_cast<float *> (&color_uint);
-}
-
-void ZedToPcl(pcl::PointCloud<pcl::PointXYZRGB>::Ptr & p_pcl_point_cloud, sl::Mat zed_cloud) {
-  sl::Mat zed_cloud_cpu;
-  zed_cloud.copyTo(zed_cloud_cpu,  sl::COPY_TYPE::GPU_CPU);
- 
-  float* p_data_cloud = zed_cloud_cpu.getPtr<float>();
-  int index = 0;
-  for (auto &it : p_pcl_point_cloud->points) {
-    float X = p_data_cloud[index];
-    if (!isValidMeasure(X)) // Checking if it's a valid point
-        it.x = it.y = it.z = it.rgb = 0;
-    else {
-        it.x = X;
-        it.y = p_data_cloud[index + 1];
-        it.z = p_data_cloud[index + 2];
-        it.rgb = convertColor(p_data_cloud[index + 3]); // Convert a 32bits float into a pcl .rgb format
-    }
-    index += 4;
-  }
-
 } */
 
 inline float convertColor(float colorIn) {
@@ -160,20 +124,8 @@ void ZedToPcl(pcl::PointCloud<pcl::PointXYZRGB>::Ptr & p_pcl_point_cloud, sl::Ma
 
 } 
 
-void pclToZed(sl::Mat &zed, pcl::PointCloud<pcl::PointXYZRGB>::Ptr & pcl) {
-	//run the downsample voxel filter here on the read in pcl cloud
-	//std::cout << "pcl \n" << std::endl;
+void PclToZed(sl::Mat &zed, pcl::PointCloud<pcl::PointXYZRGB>::Ptr & pcl) {
 	sl::Resolution cloudRes(pcl->width, pcl->height);
-	//std::cout << "done \n" << std::endl;
-
-	//Construct a zed CPU cloud
-	//std::cout << "zed \n" << std::endl;
-
-	//zed = sl::Mat(cloudRes, sl::MAT_TYPE::F32_C4, sl::MEM::CPU);
-
-	//sl::Mat zed2(cloudRes, sl::MAT_TYPE::F32_C4, sl::MEM::CPU);
-	//std::cout << "done \n" << std::endl;
-
 
 	for(size_t y = 0; y < pcl->height; y++) {
 		for(size_t x = 0; x < pcl->width; x++) {
@@ -189,13 +141,8 @@ void pclToZed(sl::Mat &zed, pcl::PointCloud<pcl::PointXYZRGB>::Ptr & pcl) {
 
 			//float color = *(float *) &rgb;
 			float color = *(float *) &bgr;
-
-
 			//we will need an RGB Color conversion here
 			zed.setValue(x, y, sl::float4(p.x, p.y, p.z, color));
-			//zed2.setValue(0, 0, sl::float4(p.x, p.y, p.z, 4300));
-			
-			//zed.setValue(x, y, sl::float4(1.0, 1.0, 1.0, 1.0));
 		}
 	}
 
@@ -216,32 +163,3 @@ shared_ptr<pcl::visualization::PCLVisualizer> createRGBVisualizer(pcl::PointClou
     pclViewer->setCameraPosition(0,0,-800,0,-1,0);
     return (pclViewer);
 }
-
-
-void ransacCPU() {
-	/*
-	pcl::ScopeTime t1("ransac");
-	pcl::SampleConsensusModelPlane<pcl::PointXYZRGB>::Ptr model(new pcl::SampleConsensusModelPlane<pcl::PointXYZRGB> (pc));
-	pcl::RandomSampleConsensus<pcl::PointXYZRGB> ransac (model);
-
-	pcl::PointXYZRGB min, max;
-
-	pcl::getMinMax3D(*pc, min, max);
-	cout << "min: " << min.x << ", " << min.y << ", " << min.z << endl;
-	cout << "max: " << max.x << ", " << max.y << ", " << max.z << endl;
-
-	
-    ransac.setDistanceThreshold(1);
-    ransac.computeModel();
-	std::vector<int> inliers;
-    ransac.getInliers(inliers);
-
-	for(int i = 0; i < (int)inliers.size(); i++) {
-        pc->points[inliers[i]].r = 255;
-		pc->points[inliers[i]].g = 0;
-        pc->points[inliers[i]].b = 0;
-	}*/
-
-	//pcl::copyPointCloud (*cloud, inliers, *final);
-
-} 

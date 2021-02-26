@@ -8,6 +8,7 @@
 #include <thread>
 #include "Timer.hpp"
 #include "common.hpp"
+#include "pcl.hpp"
 
 /*
  *** Determines where to input clouds for obstacle detection ***
@@ -25,7 +26,7 @@ enum class OperationMode {DEBUG, SILENT};
 /*
  *** Choose which viewer to use ***
  */
-enum ViewerType {NONE, PCL, GL};
+enum ViewerType {NONE, PCLV, GL};
 
 class ObsDetector {
     public:
@@ -66,6 +67,8 @@ class ObsDetector {
         //Viwers
         std::thread graphicsThread;
         GLViewer glViewer;
+        shared_ptr<pcl::visualization::PCLVisualizer> pclViewer; 
+        //pcl::PointCloud<pcl::PointXYZRGB>::Ptr pc_pcl(new pcl::PointCloud<pcl::PointXYZRGB>);
 
         //Operation paramaters
         DataSource source;
