@@ -36,26 +36,25 @@ class ObsDetector {
         //Destructor 
         ~ObsDetector();
 
-        //Start recording
+        //Start recording frames from ZED
         void startRecording(std::string directory);
 
-        //Stop recording
+        //Stop recording frames (this does not need to be called if you want to record until program exit)
         void stopRecording();
 
         // Grabs the next frame from either file or zed and performs an obstacle detection
         void update();
-        // Call this directly with ZED GPU Memory
+
+        // This is the underlying method called by update(), if DataSource::GPUMEM is selected, call this one with the frame
         void update(sl::Mat &frame);
 
-        //Do viewer tick
+        //Do viewer update tick, it may be desirable to launch this in its own thread 
         void spinViewer();
 
 
     private:
-        //Do viewer tick 
-        //void spinViewer();
 
-        //Sets up detection paramaters from an XML file
+        //Sets up detection paramaters from a JSON file
         void setupParamaters(std::string parameterFile);
 
 
@@ -65,10 +64,8 @@ class ObsDetector {
         Reader fileReader;
 
         //Viwers
-        std::thread graphicsThread;
         GLViewer glViewer;
         shared_ptr<pcl::visualization::PCLVisualizer> pclViewer; 
-        //pcl::PointCloud<pcl::PointXYZRGB>::Ptr pc_pcl(new pcl::PointCloud<pcl::PointXYZRGB>);
 
         //Operation paramaters
         DataSource source;

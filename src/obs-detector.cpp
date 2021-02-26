@@ -4,7 +4,8 @@ using namespace std;
 ObsDetector::ObsDetector(DataSource source, OperationMode mode, ViewerType viewer) : source(source), mode(mode), viewer(viewer), record(false)
 {
     setupParamaters("");
-
+    
+    //Init data stream from source
     if(source == DataSource::ZED) {
         zed.open(init_params); 
         auto camera_config = zed.getCameraInformation(cloud_res).camera_configuration;
@@ -13,11 +14,10 @@ ObsDetector::ObsDetector(DataSource source, OperationMode mode, ViewerType viewe
         fileReader.open(readDir);
     }
 
+    //Init Viewers
     if(mode != OperationMode::SILENT && viewer == ViewerType::PCLV) {
         pcl::PointCloud<pcl::PointXYZRGB>::Ptr pc_pcl(new pcl::PointCloud<pcl::PointXYZRGB>);
-
         pclViewer = createRGBVisualizer(pc_pcl);
-
     } else if(mode != OperationMode::SILENT && viewer == ViewerType::GL) {
         int argc = 1;
         char *argv[1] = {(char*)"Window"};
@@ -88,7 +88,7 @@ void ObsDetector::update(sl::Mat &frame) {
     if(mode != OperationMode::SILENT) {
         clearStale(pc, cloud_res.area());
         if(viewer == ViewerType::GL) {
-            glViewer.updatePointCloud(frame);
+            glViewer.updatePointCloud(orig);
         } else {
            pcl::PointCloud<pcl::PointXYZRGB>::Ptr pc_pcl(new pcl::PointCloud<pcl::PointXYZRGB>);
            ZedToPcl(pc_pcl, orig);
@@ -116,13 +116,12 @@ void ObsDetector::spinViewer() {
  }
 
 int main() {
-    ObsDetector obs(DataSource::ZED, OperationMode::DEBUG, ViewerType::PCLV);
-    //std::thread viewer(obs.spinViewer);
-    Timer obsTimer("Obs");
+    ObsDetector obs(DataSource::ZED, OperationMode::DEBUG, ViewerType::GL);
+
     while(true) {
-        obsTimer.reset();
         obs.spinViewer();
         obs.update();
     }
+    
     return 0;
 }
