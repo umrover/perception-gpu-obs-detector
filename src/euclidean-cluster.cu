@@ -315,7 +315,9 @@ void EuclideanClusterExtractor::findBoundingBox(GPU_Cloud_F4 &pc){
     int *minZ; 
     int *maxZ;
 
-    std::cerr << "Find bound\n";
+    if(debug_on){
+        std::cerr << "Find bound\n";
+    }
     checkStatus(cudaMalloc(&minX, sizeof(int) * blocks));
     checkStatus(cudaMalloc(&maxX, sizeof(int) * blocks));
     checkStatus(cudaMalloc(&minY, sizeof(int) * blocks));
@@ -352,7 +354,10 @@ void EuclideanClusterExtractor::findBoundingBox(GPU_Cloud_F4 &pc){
     cudaFree(maxY);
     cudaFree(minZ);
     cudaFree(maxZ);
-    std::cerr <<"Find bound complete\n";
+    if(debug_on){
+        std::cerr <<"Find bound complete\n";
+    }
+
 
 }
 __global__ void zeroBinsKernel(int* binCount, int partitions) {
@@ -798,7 +803,7 @@ __device__ __forceinline__ float atomicMaxFloat (float * addr, float value) {
 }
 
 //this debug kernel colors points based on their label
-__global__ void colorClusters(GPU_Cloud_F4 pc, int* labels, int* keys, int* values, int minCloudSize, int numClusters, float* minX, float* maxX, float* minY, float* maxY, float* minZ, float* maxZ) {
+__global__ void findClusterExtrema(GPU_Cloud_F4 pc, int* labels, int* keys, int* values, int minCloudSize, int numClusters, float* minX, float* maxX, float* minY, float* maxY, float* minZ, float* maxZ, bool debug_on) {
     int ptIdx = blockIdx.x * blockDim.x + threadIdx.x;
     if(ptIdx >= pc.size) return;
 
@@ -806,26 +811,28 @@ __global__ void colorClusters(GPU_Cloud_F4 pc, int* labels, int* keys, int* valu
     //pc.data[ptIdx].w = 9.18340948595e-41;
     //return;
 
-    int i = 0;
-    while(true) {
-        if(labels[ptIdx] == keys[i]) {
-            if(values[i] < minCloudSize) {
-                pc.data[ptIdx].w = VIEWER_BGR_COLOR;
-                return;
+    if(debug_on){
+        int i = 0;
+        while(true) {
+            if(labels[ptIdx] == keys[i]) {
+                if(values[i] < minCloudSize) {
+                    pc.data[ptIdx].w = VIEWER_BGR_COLOR;
+                    return;
+                }
+                else break;
             }
-            else break;
+            i++;
         }
-        i++;
+    
+        //float red = 3.57331108403e-43;
+        //float green = 9.14767637511e-41;
+        //float blue = 2.34180515203e-38;
+        //float magenta = 2.34184088514e-38; 
+        float yellow = 9.18340948595e-41;
+        
+        pc.data[ptIdx].w = yellow+0.0000000000000001*labels[ptIdx]*4;
     }
-    
-    //float red = 3.57331108403e-43;
-    //float green = 9.14767637511e-41;
-    //float blue = 2.34180515203e-38;
-    //float magenta = 2.34184088514e-38; 
-    float yellow = 9.18340948595e-41;
-    
-    pc.data[ptIdx].w = yellow+0.0000000000000001*labels[ptIdx]*4;
-    
+
     //X
     atomicMinFloat(&minX[i], pc.data[ptIdx].x);
     atomicMaxFloat(&maxX[i], pc.data[ptIdx].x);
@@ -883,8 +890,8 @@ private:
     int min;
 };
 
-EuclideanClusterExtractor::EuclideanClusterExtractor(float tolerance, int minSize, float maxSize, size_t cloudArea, int partitions) 
-: tolerance{tolerance}, minSize{minSize}, maxSize{maxSize}, partitions{partitions} {
+EuclideanClusterExtractor::EuclideanClusterExtractor(float tolerance, int minSize, float maxSize, size_t cloudArea, int partitions, bool debug_on) 
+: tolerance{tolerance}, minSize{minSize}, maxSize{maxSize}, partitions{partitions}, debug_on{debug_on} {
 
     cudaMalloc(&listStart, sizeof(int)*(cloudArea+1));
     cudaMalloc(&labels, sizeof(int)*cloudArea);
@@ -910,10 +917,15 @@ EuclideanClusterExtractor::ObsReturn EuclideanClusterExtractor::extractClusters(
     //set frontier arrays appropriately [done in build graph]
     //checkStatus(cudaMemsetAsync(f1, 1, sizeof(pc.size)));
     //checkStatus(cudaMemsetAsync(f2, 0, sizeof(pc.size)));
-    std::cerr <<"Determining Graph Structure\n";
+    if(debug_on) {
+        std::cerr <<"Determining Graph Structure\n";
+    }
     //determineGraphStructureKernel<<<ceilDiv(pc.size, MAX_THREADS), MAX_THREADS>>>(pc, tolerance, listStart, bins, binCount, mins, maxes, partitions);
     determineGraphStructureKernelN2<<<ceilDiv(pc.size, MAX_THREADS), MAX_THREADS>>>(pc, tolerance, listStart);
-    std::cerr <<"Structure Determined\n";
+    
+    if(debug_on) {
+        std::cerr <<"Structure Determined\n";
+    }
     thrust::exclusive_scan(thrust::device, listStart, listStart+pc.size+1, listStart, 0);
     checkStatus(cudaGetLastError());
     checkStatus(cudaDeviceSynchronize());
@@ -923,16 +935,21 @@ EuclideanClusterExtractor::ObsReturn EuclideanClusterExtractor::extractClusters(
     for(int i = 0; i < pc.size+1; i++) std::cout << "ex scan: " << temp[i] << std::endl; */
     checkStatus(cudaMemcpy(&totalAdjanecyListsSize, &listStart[pc.size], sizeof(int), cudaMemcpyDeviceToHost));
     //std::cout << "total adj size: " << totalAdjanecyListsSize << std::endl;
-    std::cerr<<"Building graph kernel\n";
+    
+    if(debug_on) {
+        std::cerr<<"Building graph kernel\n";
+    }
     cudaMalloc(&neighborLists, sizeof(int)*totalAdjanecyListsSize);
     //buildGraphKernel<<<ceilDiv(pc.size, MAX_THREADS), MAX_THREADS>>>(pc, tolerance, neighborLists, listStart, labels, f1, f2,
       //                                  bins, binCount, mins, maxes, partitions);
     buildGraphKernelN2<<<ceilDiv(pc.size, MAX_THREADS), MAX_THREADS>>>(pc, tolerance, neighborLists, listStart, labels, f1, f2);
-    std::cerr<<"Graph kernel built\n";
+
+    if(debug_on) {
+        std::cerr<<"Graph kernel built\n";
+    }
+
     checkStatus(cudaGetLastError());
     checkStatus(cudaDeviceSynchronize());
-    
-
     
     bool stillGoingCPU = true;    
     while(stillGoingCPU) {
@@ -965,7 +982,10 @@ EuclideanClusterExtractor::ObsReturn EuclideanClusterExtractor::extractClusters(
     //Determine how many clusters there actually are
     
     int numClustersOrig = thrust::distance(keys.begin(), pair.first);
-    std::cout << "CLUSTERS ORIG: " << numClustersOrig << std::endl; 
+
+    if(debug_on) {
+        std::cout << "CLUSTERS ORIG: " << numClustersOrig << std::endl; 
+    }
 
     float *minX, *maxX, *minY, *maxY, *minZ, *maxZ; 
     cudaMalloc(&minX, sizeof(float)*numClustersOrig);
@@ -1001,7 +1021,7 @@ EuclideanClusterExtractor::ObsReturn EuclideanClusterExtractor::extractClusters(
     //Call a kernel to color the clusters for debug reasons
     int* gpuKeys = thrust::raw_pointer_cast( keys.data() );
     int* gpuVals = thrust::raw_pointer_cast( values.data() );
-    colorClusters<<<ceilDiv(pc.size, MAX_THREADS), MAX_THREADS>>>(pc, labels, gpuKeys, gpuVals, minSize, numClustersOrig, minX, maxX, minY, maxY, minZ, maxZ);
+    findClusterExtrema<<<ceilDiv(pc.size, MAX_THREADS), MAX_THREADS>>>(pc, labels, gpuKeys, gpuVals, minSize, numClustersOrig, minX, maxX, minY, maxY, minZ, maxZ, debug_on);
 
     int * validClustersCount;
     cudaMalloc(&validClustersCount, sizeof(int));
@@ -1070,7 +1090,10 @@ EuclideanClusterExtractor::ObsReturn EuclideanClusterExtractor::extractClusters(
 
     int validClustersCPU;
     cudaMemcpy(&validClustersCPU, validClustersCount, sizeof(int), cudaMemcpyDeviceToHost);
-    std::cout << "valid cluster size: " << validClustersCPU << std::endl;
+    
+    if(debug_on) {
+        std::cout << "valid cluster size: " << validClustersCPU << std::endl;
+    }
 
     ObsReturn obsReturn;
     obsReturn.size = numClustersOrig;

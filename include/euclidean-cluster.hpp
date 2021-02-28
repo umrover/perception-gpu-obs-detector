@@ -57,6 +57,7 @@ class EuclideanClusterExtractor {
         float tolerance;
         int minSize;
         float maxSize;
+        bool debug_on;
         
         //internal information
         int* neighborLists; //lists of neighbors for each point inline

@@ -88,9 +88,6 @@ __global__ void ransacKernel(GPU_Cloud_F4 pc, float* inlierCounts, int* modelPoi
         //add a 0 if inlier, 1 if not 
         inliers += (d < threshold) ? 1 : 0; //very probalmatic line, how can we reduce these checks
         //inliers += (-1*abs(d - threshold)/(d - threshold) + 1 )/2;
-
-        
-        
     }
     
     //parallel reduction to get an aggregate sum of the number of inliers for this model
@@ -237,10 +234,7 @@ __global__ void computeInliers(GPU_Cloud_F4 pc , int* optimalModelIndex, int* mo
             //abgr[1] =  abgr[1]/2;
             //abgr[2] = abgr[2]/2;
             //abgr[3] = abgr[3];
-            
         }
-
-        
     }
 
     //*debug color model points 3.57331108403e-43; // (red)
@@ -319,15 +313,17 @@ __global__ void removeInliers(GPU_Cloud_F4 pc, GPU_Cloud_F4 out, int* optimalMod
 
 RansacPlane::RansacPlane() {};
 
-RansacPlane::RansacPlane(sl::float3 axis, float epsilon, int iterations, float threshold, int pcSize)
-: pc(pc), axis(axis), epsilon(epsilon), iterations(iterations), threshold(threshold)  {
+RansacPlane::RansacPlane(sl::float3 axis, float epsilon, int iterations, float threshold, int pcSize, bool debug_mode)
+: pc(pc), axis(axis), epsilon(epsilon), iterations(iterations), threshold(threshold) debug_on(debug_mode) {
     //Set up buffers needed for RANSAC
     cudaMalloc(&inlierCounts, sizeof(float) * iterations); 
     cudaMalloc(&modelPoints, sizeof(int) * iterations * 3);
     cudaMalloc(&selection, sizeof(float) * 3 * 3); //selected model 3 points, each X,Y,Z (drop RGBA)
     cudaMalloc(&optimalModelIndex, sizeof(int));
-
-    std::cout << "RANSAC Constructor, random indicies: " << std::endl;
+    
+    if(debug_on){
+        std::cout << "RANSAC Constructor, random indicies: " << std::endl;
+    }
 
     //Generate random numbers in CPU to use in RANSAC kernel
     int* randomNumsCPU = (int*) malloc(sizeof(int) * iterations* 3);
@@ -354,7 +350,9 @@ RansacPlane::RansacPlane(sl::float3 axis, float epsilon, int iterations, float t
     randomNumsCPU[2] = 1;
     */
 
-    std::cout << std::endl << std::endl;
+    if(debug_on) {
+        std::cout << std::endl << std::endl;
+    }
 
     cudaMemcpy(modelPoints, randomNumsCPU, sizeof(int) * iterations * 3, cudaMemcpyHostToDevice);
     free(randomNumsCPU);
@@ -371,7 +369,7 @@ EFFECTS:
     2. [GPU] Select the canidate with the highest score and inform the CPU
     3. [CPU] Use the three model points to produce a plane equation in standard form and return to the user
 */
-RansacPlane::Plane RansacPlane::computeModel(GPU_Cloud_F4 pc) {
+RansacPlane::Plane RansacPlane::debugModel(GPU_Cloud_F4 pc) {
     this->pc = pc;
 
     int blocks = iterations;
@@ -384,7 +382,9 @@ RansacPlane::Plane RansacPlane::computeModel(GPU_Cloud_F4 pc) {
     checkStatus(cudaGetLastError());
     checkStatus(cudaDeviceSynchronize());
 
-    std::cout << "finishing ransac " << pc.size << std::endl;
+    if(debug_on) {
+        std::cout << "finishing ransac " << pc.size << std::endl;
+    }
 
     cudaMemcpy(selectedModel, selection, sizeof(float)*3*3, cudaMemcpyDeviceToHost);
     //for(int i = 0; i < 3; i++) {
@@ -397,7 +397,7 @@ RansacPlane::Plane RansacPlane::computeModel(GPU_Cloud_F4 pc) {
     return plane;
 }
 
-RansacPlane::Plane RansacPlane::computeModel(GPU_Cloud_F4 &pc, bool flag) {
+RansacPlane::Plane RansacPlane::computeModel(GPU_Cloud_F4 &pc) {
     GPU_Cloud_F4 tmpCloud = createCloud(pc.size); //exp
 
     this->pc = pc;

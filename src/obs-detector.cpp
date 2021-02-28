@@ -46,10 +46,12 @@ void ObsDetector::setupParamaters(std::string parameterFile) {
     defParams.image_size.width = 160;
     defParams.image_size.height = 90;
 
+    bool debug_mode = (mode == OperationMode::DEBUG);
+
     //Obs Detecting Algorithm Params
     passZ = new PassThrough('z', 200.0, 7000.0); //7000
-    ransacPlane = new RansacPlane(sl::float3(0, 1, 0), 7, 400, 150, cloud_res.area());
-    ece = new EuclideanClusterExtractor(100, 50, 0, cloud_res.area(), 9); 
+    ransacPlane = new RansacPlane(sl::float3(0, 1, 0), 7, 400, 150, cloud_res.area(), debug_mode);
+    ece = new EuclideanClusterExtractor(100, 50, 0, cloud_res.area(), 9, debug_mode); 
 }
 
 
@@ -81,7 +83,7 @@ void ObsDetector::update(sl::Mat &frame) {
 
     // Processing 
     passZ->run(pc);
-    ransacPlane->computeModel(pc, true);
+    ransacPlane->computeModel(pc);
     obstacles = ece->extractClusters(pc);
 
     // Rendering
