@@ -90,24 +90,23 @@ class Reader {
             }
 	    }
 	
-        void load(int i, sl::Mat &zed) {
+        void load(int i, sl::Mat &zed, bool pcl) {
             std::string pcd_name = pcd_names[i];
  	        std::string full_path = dir + std::string("/") + pcd_name;
             
-            pcl::PointCloud<pcl::PointXYZRGB>::Ptr pc_pcl(new pcl::PointCloud<pcl::PointXYZRGB>);
-            loadPCD(pc_pcl, full_path);
-            PclToZed(zed, pc_pcl);
+            if(pcl) {
+                pcl::PointCloud<pcl::PointXYZRGB>::Ptr pc_pcl(new pcl::PointCloud<pcl::PointXYZRGB>);
+                loadPCD(pc_pcl, full_path);
+                PclToZed(zed, pc_pcl);
+            } else {
+                ifstream fin(full_path);
+                
+                sl::Resolution r = zed.getResolution();
+                int width = r.width;
 
-            //ifstream fin(full_path);
-
-            /*
-            sl::Resolution r = zed.getResolution();
-            int width = r.width;
-
-            std::string xs, ys, zs, cs;
-            int q = 0;
-            while(fin >> xs >> ys >> zs >> cs) {
-                //if(cs!="nan" && cs != "-inf" && cs != "inf") {
+                std::string xs, ys, zs, cs;
+                int q = 0;
+                while(fin >> xs >> ys >> zs >> cs) {
 
                     float px = std::stof(xs);
                     float py = std::stof(ys);
@@ -120,10 +119,9 @@ class Reader {
                     zed.setValue(q%width, q/width, sl::float4(px, py, pz, pw));
                     q++;
 
-                //} 
+                }
+                zed.updateGPUfromCPU();
             }
-            zed.updateGPUfromCPU();
-            */
             
         }
         

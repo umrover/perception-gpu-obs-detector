@@ -62,7 +62,7 @@ void ObsDetector::update() {
         //DEBUG 
         //frameNum = 250;
         sl::Mat frame(cloud_res, sl::MAT_TYPE::F32_C4, sl::MEM::CPU);
-        fileReader.load(frameNum, frame);
+        fileReader.load(frameNum, frame, true);
         update(frame);
     } 
 } 
@@ -80,10 +80,9 @@ void ObsDetector::update(sl::Mat &frame) {
     pc = getRawCloud(frame);
 
     // Processing 
-    /*
     passZ->run(pc);
     ransacPlane->computeModel(pc, true);
-    obstacles = ece->extractClusters(pc); */
+    obstacles = ece->extractClusters(pc); 
 
     // Rendering
     if(mode != OperationMode::SILENT) {
@@ -111,6 +110,22 @@ void ObsDetector::spinViewer() {
         updateObjectBoxes(obstacles.size, obstacles.minX, obstacles.maxX, obstacles.minY, obstacles.maxY, obstacles.minZ, obstacles.maxZ );
         updateProjectedLines(ece->bearingRight, ece->bearingLeft);
     } else if(viewer == ViewerType::PCLV) {
+        pclViewer->removeAllShapes();
+        for(int i = 0; i < obstacles.size; i++) {
+            float xMin = obstacles.minX[i];
+            float xMax = obstacles.maxX[i];
+            float yMin = obstacles.minY[i];
+            float yMax = obstacles.maxY[i];
+            float zMin = obstacles.minZ[i];
+            float zMax = obstacles.maxZ[i];
+            if(zMax < 0.01) {
+                xMin = 0; xMax = 0; yMin = 0; yMax = 0; zMin = 0; zMax = 0;
+            };
+            pclViewer->addCube(xMin, xMax, yMin, yMax, zMin, zMax, 0.0, 1.0, 0.0, to_string(i));
+            pclViewer->setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_REPRESENTATION, pcl::visualization::PCL_VISUALIZER_REPRESENTATION_WIREFRAME, to_string(i));
+            pclViewer->setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_LINE_WIDTH, 3, to_string(i));
+
+        }
         pclViewer->spinOnce(10);
     }
 }
@@ -130,7 +145,7 @@ void ObsDetector::startRecording(std::string directory) {
 
 int main() {
     ObsDetector obs(DataSource::FILESYSTEM, OperationMode::DEBUG, ViewerType::PCLV);
-    //obs.startRecording("test-record2");
+    //obs.startRecording("test-record3");
     //std::thread viewerTick(viewerAsync);
     while(true) {
         obs.update();
