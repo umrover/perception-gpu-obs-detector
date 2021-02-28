@@ -22,8 +22,6 @@ ObsDetector::ObsDetector(DataSource source, OperationMode mode, ViewerType viewe
         int argc = 1;
         char *argv[1] = {(char*)"Window"};
         glViewer.init(argc, argv, defParams);
-        //graphicsThread = std::thread( [this] { this->spinViewer(); } );
-        //graphicsThread.detach();
     }
 };
 
@@ -31,7 +29,7 @@ ObsDetector::ObsDetector(DataSource source, OperationMode mode, ViewerType viewe
 void ObsDetector::setupParamaters(std::string parameterFile) {
     //Operating resolution
     cloud_res = sl::Resolution(320/2, 180/2);
-    readDir = "../data/";
+    readDir = "test-record/";
 
     //Zed params
     init_params.coordinate_units = sl::UNIT::MILLIMETER;
@@ -61,6 +59,8 @@ void ObsDetector::update() {
         zed.retrieveMeasure(frame, sl::MEASURE::XYZRGBA, sl::MEM::GPU, cloud_res); 
         update(frame);
     } else if(source == DataSource::FILESYSTEM) {
+        //DEBUG 
+        //frameNum = 250;
         sl::Mat frame(cloud_res, sl::MAT_TYPE::F32_C4, sl::MEM::CPU);
         fileReader.load(frameNum, frame);
         update(frame);
@@ -80,9 +80,10 @@ void ObsDetector::update(sl::Mat &frame) {
     pc = getRawCloud(frame);
 
     // Processing 
+    /*
     passZ->run(pc);
     ransacPlane->computeModel(pc, true);
-    obstacles = ece->extractClusters(pc);
+    obstacles = ece->extractClusters(pc); */
 
     // Rendering
     if(mode != OperationMode::SILENT) {
@@ -94,6 +95,11 @@ void ObsDetector::update(sl::Mat &frame) {
            ZedToPcl(pc_pcl, orig);
            pclViewer->updatePointCloud(pc_pcl); //update the viewer 
         }
+    }
+
+    // Recording
+    if(record) {
+        recorder.writeFrame(orig);
     }
 
     frameNum++;
@@ -109,6 +115,11 @@ void ObsDetector::spinViewer() {
     }
 }
 
+void ObsDetector::startRecording(std::string directory) {
+    recorder.open(directory);
+    record = true;
+}
+
  ObsDetector::~ObsDetector() {
      delete passZ;
      delete ransacPlane;
@@ -117,11 +128,11 @@ void ObsDetector::spinViewer() {
 
 int main() {
     ObsDetector obs(DataSource::ZED, OperationMode::DEBUG, ViewerType::GL);
-
+    //obs.startRecording("test-record2");
     while(true) {
         obs.spinViewer();
         obs.update();
     }
-    
+
     return 0;
 }

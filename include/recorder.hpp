@@ -9,9 +9,19 @@ using namespace std;
 
 class Recorder {
     public:
+        Recorder() : frameNum(0){
+
+        }
+
         Recorder(string dir) : dir(dir), frameNum(0) {
             mkdir(dir.c_str(), 0777);
         }
+
+        void open(string dir) {
+            this->dir = dir;
+            mkdir(dir.c_str(), 0777);
+        }
+
         void writeFrame(sl::Mat &frame) {
             ofstream fout(dir+ "/pc" + to_string(frameNum) + ".pc");
             sl::Mat cpuFrame; 
@@ -90,17 +100,19 @@ class Reader {
             std::string xs, ys, zs, cs;
             int q = 0;
             while(fin >> xs >> ys >> zs >> cs) {
-                if(cs!="nan" && cs != "-inf" && cs != "inf") {
+                //if(cs!="nan" && cs != "-inf" && cs != "inf") {
 
                     float px = std::stof(xs);
                     float py = std::stof(ys);
                     float pz = std::stof(zs);
                     float pw = std::stof(cs);
 
+                    //cout << "color: " < pw << endl;
+
                     zed.setValue(q%width, q/width, sl::float4(px, py, pz, pw));
                     q++;
 
-                } 
+                //} 
             }
             zed.updateGPUfromCPU();
 

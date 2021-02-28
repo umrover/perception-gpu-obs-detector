@@ -154,7 +154,7 @@ shared_ptr<pcl::visualization::PCLVisualizer> createRGBVisualizer(pcl::PointClou
     // Open 3D pclViewer and add point clousl::ERROR_CODE_ 
     shared_ptr<pcl::visualization::PCLVisualizer> pclViewer(
       new pcl::visualization::PCLVisualizer("PCL 3D pclViewer")); //This is a smart pointer so no need to worry ab deleteing it
-    pclViewer->setBackgroundColor(0.12, 0.12, 0.12);
+    pclViewer->setBackgroundColor(0.87, 0.9, 0.91);
     pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb(pt_cloud_ptr);
     pclViewer->addPointCloud<pcl::PointXYZRGB>(pt_cloud_ptr, rgb);
     pclViewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1.5);
