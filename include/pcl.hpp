@@ -26,5 +26,6 @@ using namespace std;
 shared_ptr<pcl::visualization::PCLVisualizer> createRGBVisualizer(pcl::PointCloud<pcl::PointXYZRGB>::Ptr &pt_cloud_ptr);
 void PclToZed(sl::Mat &zed, pcl::PointCloud<pcl::PointXYZRGB>::Ptr & pcl);
 void ZedToPcl(pcl::PointCloud<pcl::PointXYZRGB>::Ptr & p_pcl_point_cloud, sl::Mat zed_cloud);
+void loadPCD(pcl::PointCloud<pcl::PointXYZRGB>::Ptr & pc, std::string full_path);
 
 #endif

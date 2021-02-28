@@ -93,6 +93,25 @@ void setPointCloud(int i) {
 	cout << "Post-downsample: " << pc->width << "*" << pc->height << endl;
 } */
 
+
+void loadPCD(pcl::PointCloud<pcl::PointXYZRGB>::Ptr & pc, std::string full_path) {
+	if (pcl::io::loadPCDFile<pcl::PointXYZRGB> (full_path, *pc) == -1){ //* load the file 
+    	std::cerr << "Couldn't read file\n";
+		PCL_ERROR ("Couldn't read file test_pcd.pcd \n"); 
+  	}
+	cerr << "> Loaded point cloud of " << pc->width << "*" << pc->height << endl;
+
+	//Reduce resolution
+	pcl::PointCloud<pcl::PointXYZRGB>::Ptr downsampled(new pcl::PointCloud<pcl::PointXYZRGB>(pc->width/2, pc->height/2));
+	for(size_t y = 0; y < pc->height/2; y++) {
+			for(size_t x = 0; x < pc->width/2; x++) {
+				pcl::PointXYZRGB p = pc->at(x*2, y*2);
+				downsampled->at(x, y) = p;
+			}
+	}
+	pc = downsampled;
+}
+
 inline float convertColor(float colorIn) {
     uint32_t color_uint = *(uint32_t *) & colorIn;
     unsigned char *color_uchar = (unsigned char *) &color_uint;
@@ -157,7 +176,7 @@ shared_ptr<pcl::visualization::PCLVisualizer> createRGBVisualizer(pcl::PointClou
     pclViewer->setBackgroundColor(0.87, 0.9, 0.91);
     pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb(pt_cloud_ptr);
     pclViewer->addPointCloud<pcl::PointXYZRGB>(pt_cloud_ptr, rgb);
-    pclViewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1.5);
+    pclViewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 5.5);
     pclViewer->addCoordinateSystem(1.0);
     pclViewer->initCameraParameters();
     pclViewer->setCameraPosition(0,0,-800,0,-1,0);

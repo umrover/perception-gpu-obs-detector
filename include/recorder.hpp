@@ -4,6 +4,7 @@
 #include <dirent.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include "pcl.hpp"
 
 using namespace std;
 
@@ -92,8 +93,14 @@ class Reader {
         void load(int i, sl::Mat &zed) {
             std::string pcd_name = pcd_names[i];
  	        std::string full_path = dir + std::string("/") + pcd_name;
-            ifstream fin(full_path);
+            
+            pcl::PointCloud<pcl::PointXYZRGB>::Ptr pc_pcl(new pcl::PointCloud<pcl::PointXYZRGB>);
+            loadPCD(pc_pcl, full_path);
+            PclToZed(zed, pc_pcl);
 
+            //ifstream fin(full_path);
+
+            /*
             sl::Resolution r = zed.getResolution();
             int width = r.width;
 
@@ -107,7 +114,8 @@ class Reader {
                     float pz = std::stof(zs);
                     float pw = std::stof(cs);
 
-                    //cout << "color: " < pw << endl;
+                    if(isnan(pw) || !isfinite(pw) || isnan(px) || !isfinite(px) ) pw = 0.0;
+                    //cout << "color: " << pw << endl;
 
                     zed.setValue(q%width, q/width, sl::float4(px, py, pz, pw));
                     q++;
@@ -115,7 +123,7 @@ class Reader {
                 //} 
             }
             zed.updateGPUfromCPU();
-
+            */
             
         }
         
