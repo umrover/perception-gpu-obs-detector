@@ -29,7 +29,7 @@ ObsDetector::ObsDetector(DataSource source, OperationMode mode, ViewerType viewe
 void ObsDetector::setupParamaters(std::string parameterFile) {
     //Operating resolution
     cloud_res = sl::Resolution(320/2, 180/2);
-    readDir = "test-record2/";
+    readDir = "../data";
 
     //Zed params
     init_params.coordinate_units = sl::UNIT::MILLIMETER;
@@ -148,7 +148,7 @@ void ObsDetector::startRecording(std::string directory) {
 
 
 int main() {
-    ObsDetector obs(DataSource::ZED, OperationMode::DEBUG, ViewerType::GL);
+    ObsDetector obs(DataSource::FILESYSTEM, OperationMode::DEBUG, ViewerType::PCLV);
     //obs.startRecording("test-record3");
     //std::thread viewerTick(viewerAsync);
     while(true) {
