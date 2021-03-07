@@ -80,7 +80,6 @@ void ObsDetector::update(sl::Mat &frame) {
     pc = getRawCloud(frame);
 
     // Processing 
-    
     passZ->run(pc);
     std::cout << "pre ransac:" << pc.size << endl;
     ransacPlane->computeModel(pc, true);

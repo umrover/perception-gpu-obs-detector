@@ -399,6 +399,8 @@ RansacPlane::Plane RansacPlane::computeModel(GPU_Cloud_F4 pc) {
 }
 
 RansacPlane::Plane RansacPlane::computeModel(GPU_Cloud_F4 &pc, bool flag) {
+    if(pc.size == 0) return {sl::float3(0,0,0), sl::float3(0,0,0), sl::float3(0,0,0)};
+
     GPU_Cloud_F4 tmpCloud = createCloud(pc.size); //exp
 
     this->pc = pc;
