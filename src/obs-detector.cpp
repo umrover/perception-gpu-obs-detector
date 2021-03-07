@@ -59,7 +59,7 @@ void ObsDetector::setupParamaters(std::string parameterFile) {
 
     //Obs Detecting Algorithm Params
     passZ = new PassThrough('z', 200.0, 8000.0); //7000
-    ransacPlane = new RansacPlane(sl::float3(0, 1, 0), 4, 400, 160, cloud_res.area());
+    ransacPlane = new RansacPlane(sl::float3(0, 1, 0), 8, 600, 80, cloud_res.area());
     ece = new EuclideanClusterExtractor(150, 30, 0, cloud_res.area(), 9); 
 }
 
@@ -97,7 +97,7 @@ void ObsDetector::update(sl::Mat &frame) {
     //std::cout << "pre ransac:" << pc.size << endl;
     ransacPlane->computeModel(pc, true);
     //std::cout << "post ransac:" << pc.size << endl;
-    //obstacles = ece->extractClusters(pc); 
+    obstacles = ece->extractClusters(pc); 
 
     // Rendering
     if(mode != OperationMode::SILENT) {
@@ -106,7 +106,7 @@ void ObsDetector::update(sl::Mat &frame) {
             glViewer.updatePointCloud(orig);
         } else {
            pcl::PointCloud<pcl::PointXYZRGB>::Ptr pc_pcl(new pcl::PointCloud<pcl::PointXYZRGB>);
-           ZedToPcl(pc_pcl, orig);
+           ZedToPcl(pc_pcl, frame);
            pclViewer->updatePointCloud(pc_pcl); //update the viewer 
         }
     }
