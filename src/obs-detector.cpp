@@ -45,9 +45,9 @@ void ObsDetector::setupParamaters(std::string parameterFile) {
     defParams.image_size.height = 90;
 
     //Obs Detecting Algorithm Params
-    passZ = new PassThrough('z', 200.0, 7000.0); //7000
-    ransacPlane = new RansacPlane(sl::float3(0, 1, 0), 7, 400, 150, cloud_res.area());
-    ece = new EuclideanClusterExtractor(100, 50, 0, cloud_res.area(), 9); 
+    passZ = new PassThrough('z', 200.0, 8000.0); //7000
+    ransacPlane = new RansacPlane(sl::float3(0, 1, 0), 4, 400, 160, cloud_res.area());
+    ece = new EuclideanClusterExtractor(150, 30, 0, cloud_res.area(), 9); 
 }
 
 
@@ -80,8 +80,12 @@ void ObsDetector::update(sl::Mat &frame) {
     pc = getRawCloud(frame);
 
     // Processing 
+    
     passZ->run(pc);
+    std::cout << "pre ransac:" << pc.size << endl;
     ransacPlane->computeModel(pc, true);
+    std::cout << "post ransac:" << pc.size << endl;
+
     obstacles = ece->extractClusters(pc); 
 
     // Rendering
@@ -98,7 +102,7 @@ void ObsDetector::update(sl::Mat &frame) {
 
     // Recording
     if(record) {
-        recorder.writeFrame(orig);
+        recorder.writeFrame(frame);
     }
 
     frameNum++;
@@ -144,7 +148,7 @@ void ObsDetector::startRecording(std::string directory) {
 
 
 int main() {
-    ObsDetector obs(DataSource::FILESYSTEM, OperationMode::DEBUG, ViewerType::PCLV);
+    ObsDetector obs(DataSource::ZED, OperationMode::DEBUG, ViewerType::GL);
     //obs.startRecording("test-record3");
     //std::thread viewerTick(viewerAsync);
     while(true) {

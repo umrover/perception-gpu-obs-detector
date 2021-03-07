@@ -415,7 +415,7 @@ RansacPlane::Plane RansacPlane::computeModel(GPU_Cloud_F4 &pc, bool flag) {
     int sizeCpu;
     cudaMemcpy(&sizeCpu, size, sizeof(int), cudaMemcpyDeviceToHost);
     tmpCloud.size = sizeCpu;
-    copyCloud(pc, tmpCloud);
+    if(sizeCpu > 0) copyCloud(pc, tmpCloud);
     cudaFree(tmpCloud.data); //exp
    // pc.size = 320/2*180/2;
     //std::cout << sizeCpu << std::endl;
