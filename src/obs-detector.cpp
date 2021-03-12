@@ -159,13 +159,13 @@ void ObsDetector::startRecording(std::string directory) {
 
 
 int main() {
-    ObsDetector obs(DataSource::FILESYSTEM, OperationMode::DEBUG, ViewerType::PCLV);
+    ObsDetector obs(DataSource::FILESYSTEM, OperationMode::DEBUG, ViewerType::GL);
     //obs.startRecording("test-record3");
     //obs.update();
-    //std::thread viewerTick( [&]{while(true) {obs.spinViewer(); cout << "here";}} );
-
+    std::thread viewerTick( [&]{while(true) { obs.update();} });
+    
     while(true) {
-        obs.update();
+        //obs.update();
         obs.spinViewer();
     }
 

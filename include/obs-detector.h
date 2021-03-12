@@ -91,6 +91,6 @@ class ObsDetector {
         //Other
         Recorder recorder;
         int frameNum = 0;
-        bool framePlay = false;
+        bool framePlay = true;
         
 };
