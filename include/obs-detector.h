@@ -9,6 +9,7 @@
 #include "Timer.hpp"
 #include "common.hpp"
 #include "pcl.hpp"
+#include "voxel-grid.hpp"
 
 /*
  *** Determines where to input clouds for obstacle detection ***
@@ -76,6 +77,7 @@ class ObsDetector {
         //Detection algorithms 
         PassThrough *passZ;
         RansacPlane *ransacPlane;
+        VoxelGrid *voxelGrid;
         EuclideanClusterExtractor *ece;
 
         //Paramaters

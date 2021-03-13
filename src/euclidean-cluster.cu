@@ -665,6 +665,53 @@ __global__ void buildGraphKernel(GPU_Cloud_F4 pc, float tolerance, int* neighbor
     f2[ptIdx] = false;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 __global__ void determineGraphStructureKernelN2(GPU_Cloud_F4 pc, float tolerance, int* listStart) {
     int ptIdx = blockIdx.x * blockDim.x + threadIdx.x;
     if(ptIdx >= pc.size) return;
