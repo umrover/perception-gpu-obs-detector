@@ -1,4 +1,5 @@
 #include <sl/Camera.hpp>
+#include <thrust/functional.h>
 
 #ifndef COMMON
 #define COMMON
@@ -33,7 +34,7 @@ enum class Axis {X, Y, Z};
  * \class CompareFloat4
  * \brief Functor that compares Float4 values
 */
-class CompareFloat4 {
+class CompareFloat4 : public thrust::binary_function<bool,sl::float4,sl::float4> {
 public: 
 
     /**

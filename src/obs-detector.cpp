@@ -1,4 +1,5 @@
 #include "obs-detector.h"
+#include "common.hpp"
 using namespace std;
 
 ObsDetector::ObsDetector(DataSource source, OperationMode mode, ViewerType viewer) : source(source), mode(mode), viewer(viewer), record(false)
@@ -97,8 +98,56 @@ void ObsDetector::update(sl::Mat &frame) {
     passZ->run(pc);
     //std::cout << "pre ransac:" << pc.size << endl;
     ransacPlane->computeModel(pc, true);
+    
+    
+    
 
-    voxelGrid->buildBins(pc);
+
+
+
+
+
+
+
+
+    
+    // Sample debug cloud
+    int size = 4;
+    sl::float4 testCPU[size] = {
+        {3,2,3,4},
+        {1,2,3,4},
+        {4,6,7,1},
+        {5,6,7,1}
+    };
+    
+    GPU_Cloud_F4 testCPUpc {
+        testCPU, size, size
+    };
+    
+    sl::float4* testGPU;
+    cudaMalloc(&testGPU, sizeof(sl::float4)*size);
+    cudaMemcpy(testGPU, testCPU, sizeof(sl::float4)*size, cudaMemcpyHostToDevice);
+    GPU_Cloud_F4 testPC = { testGPU, size, size};
+
+
+    voxelGrid->buildBins(testPC);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     //std::cout << "post ransac:" << pc.size << endl;
     obstacles = ece->extractClusters(pc); 
 
