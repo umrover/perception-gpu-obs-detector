@@ -764,6 +764,167 @@ __global__ void buildGraphKernelN2(GPU_Cloud_F4 pc, float tolerance, int* neighb
     f2[ptIdx] = false;
 }
 
+__global__ void determineGraphStructureKernel(GPU_Cloud_F4 pc, float tolerance, int* listStart, Bins bins) {
+    int ptIdx = blockIdx.x * blockDim.x + threadIdx.x;
+    if(ptIdx >= pc.size) return;
+
+    sl::float3 pt = pc.data[ptIdx];
+    int neighborCount = 0;
+    float partitionLength = bins.partitionLength;
+    int binNum = pc.data[ptIdx].w;
+    int partitions = bins.partition;
+
+    // Assume that the point is 1/4 the way from the edge of the bin, subtract this from
+    // the tolerance and then figure out how many bins outward need to be traversed to satisfy the tolerance
+    // Can make 1/4 larger to search fewer bins or smaller to search more bins
+    int check = 3;
+    if(ptIdx == check) printf("partitionLength: %i\n", partitionLength);
+    int binsWithinThreshold = (tolerance - 0.25 * partitionLength)/partitionLength;
+    int totalBinsSearch = (binsWithinThreshold*2+1)^3; 
+    int partitionsCubed = partitions*partitions*partitions;
+    
+    if(ptIdx == check) printf("BinsWithinThreshold: %i\n", binsWithinThreshold);
+
+    /*
+    The bin one away from currBin in Z direction is binNum +1
+    The bin one away from currBin in Y direction is binNum +partitions
+    The bin one away from currBin in X direction is binNum +partitions^2
+    */
+    //Start at lower left, iterate front to back, bottom to top, left to right 
+    //Iterate left to right
+    // Create array of bins to search through 
+
+    // Method for making sure you don't try to access negative bins. Definitely could use some revising to account for
+    // other out of bounds cases that aren't necessarily negative
+    int binsX, binsY, binsZ;
+    binsX = binsY = binsZ = binsWithinThreshold;
+    int startBin = binNum;
+    int partitionsSquared = partitions*partitions;
+    
+    if(startBin - binsWithinThreshold >= 0) startBin -= binsWithinThreshold;
+    else binsX = 0;
+    
+    if(startBin - binsWithinThreshold*partitions >= 0) startBin -= partitions*binsWithinThreshold; 
+    else binsY = 0;
+
+    if(startBin - binsWithinThreshold*partitions*partitions >=0) startBin -= partitionsSquared*binsWithinThreshold;
+    else binsZ = 0;
+
+    int binsSearched = 0;
+    if(ptIdx == check) printf("PC Size: %i\n", pc.size);
+    if(ptIdx == check) printf("PtMain: (%f, %f, %f)\n", pt.x, pt.y, pt.z);
+    if(ptIdx == check) printf("BinNum: %i\n StartBin: %i\n", binNum, startBin);
+    for(int i = startBin; i <= startBin + binsZ*2*partitionsSquared && i < partitionsCubed; i += partitionsSquared) {
+        //Iterate bottom to top
+        for(int j = i; j <= i + binsY*2*partitions && j < partitionsCubed; j += partitions) {
+            //Iterate front to back
+            for(int k = j; k <= j + binsX*2 && k < partitionsCubed; ++k){
+                //Iterate through points in cloud
+                if(ptIdx== check) printf("Differece: %i\n", bins.data[k+1] - bins.data[k]);
+                if(ptIdx == check) printf("k Val: %i\n", k);
+                for(int l = 0; l < bins.data[k+1] - bins.data[k]; ++l) {
+                    sl::float3 dvec = (pt - sl::float3(pc.data[l+bins.data[k]]));
+                    //this is a neighbor
+                    if( dvec.norm() < tolerance && l+bins.data[k] != ptIdx) {
+                        neighborCount++;
+                    }
+                    if(ptIdx == check) {
+                        //printf("PtECE: (%f, %f, %f)\n", pc.data[l+bins.data[k]].x, pc.data[l+bins.data[k]].y, pc.data[l+bins.data[k]].z);
+                    }
+                }
+                binsSearched++;
+            }
+        }
+    }
+
+    if(ptIdx == 0) printf("Bins Searched: %i\n", binsSearched);
+    listStart[ptIdx] = neighborCount;
+
+}
+
+
+/* This kernel builds the graph 
+Fairly standard adjacency list structure. 
+*/
+__global__ void buildGraphKernel(GPU_Cloud_F4 pc, float tolerance, int* neighborLists, int* listStart, int* labels, bool* f1, bool* f2, Bins bins) {
+    int ptIdx = blockIdx.x * blockDim.x + threadIdx.x;
+    if(ptIdx >= pc.size) return;
+
+    sl::float3 pt = pc.data[ptIdx];
+    int neighborCount = 0;
+    float partitionLength = bins.partitionLength;
+    int binNum = pc.data[ptIdx].w;
+    int partitions = bins.partition;
+
+    // Assume that the point is 1/4 the way from the edge of the bin, subtract this from
+    // the tolerance and then figure out how many bins outward need to be traversed to satisfy the tolerance
+    // Can make 1/4 larger to search fewer bins or smaller to search more bins
+    int binsWithinThreshold = (tolerance - 0.25 * partitionLength)/partitionLength;
+    int totalBinsSearch = (binsWithinThreshold*2+1)^3; 
+    int partitionsCubed = partitions*partitions*partitions;
+    int check = 3;
+    if(ptIdx == check) printf("BinsWithinThreshold: %i\n", binsWithinThreshold);
+
+    /*
+    The bin one away from currBin in Z direction is binNum +1
+    The bin one away from currBin in Y direction is binNum +partitions
+    The bin one away from currBin in X direction is binNum +partitions^2
+    */
+    //Start at lower left, iterate front to back, bottom to top, left to right 
+    //Iterate left to right
+    // Create array of bins to search through 
+
+    // Method for making sure you don't try to access negative bins. Definitely could use some revising to account for
+    // other out of bounds cases that aren't necessarily negative
+    int binsX, binsY, binsZ;
+    binsX = binsY = binsZ = binsWithinThreshold;
+    int startBin = binNum;
+    int partitionsSquared = partitions*partitions;
+    int* list = neighborLists + listStart[ptIdx];
+
+    if(startBin - binsWithinThreshold >= 0) startBin -= binsWithinThreshold;
+    else binsX = 0;
+    
+    if(startBin - binsWithinThreshold*partitions >= 0) startBin -= partitions*binsWithinThreshold; 
+    else binsY = 0;
+
+    if(startBin - binsWithinThreshold*partitions*partitions >=0) startBin -= partitionsSquared*binsWithinThreshold;
+    else binsZ = 0;
+
+    int binsSearched = 0;
+    if(ptIdx == check) printf("PC Size: %i\n", pc.size);
+    if(ptIdx == check) printf("PtMain: (%f, %f, %f)\n", pt.x, pt.y, pt.z);
+    if(ptIdx == check) printf("BinNum: %i\n StartBin: %i\n", binNum, startBin);
+    for(int i = startBin; i <= startBin + binsZ*2*partitionsSquared && i < partitionsCubed; i += partitionsSquared) {
+        //Iterate bottom to top
+        for(int j = i; j <= i + binsY*2*partitions && j < partitionsCubed; j += partitions) {
+            //Iterate front to back
+            for(int k = j; k <= j + binsX*2 && k < partitionsCubed; ++k){
+                //Iterate through points in cloud
+                if(ptIdx == check) printf("Differece: %i\n", bins.data[k+1] - bins.data[k]);
+                if(ptIdx == check) printf("k Val: %i\n", k);
+                for(int l = 0; l < bins.data[k+1] - bins.data[k]; ++l) {
+                    sl::float3 dvec = (pt - sl::float3(pc.data[l+bins.data[k]]));
+                    //this is a neighbor
+                    if( dvec.norm() < tolerance && l+bins.data[k] != ptIdx) {
+                        list[neighborCount] = l+bins.data[k];
+                        neighborCount++;
+                    }
+                    if(ptIdx == check) {
+                        //printf("PtECE: (%f, %f, %f)\n", pc.data[l+bins.data[k]].x, pc.data[l+bins.data[k]].y, pc.data[l+bins.data[k]].z);
+                    }
+                }
+                binsSearched++;
+            }
+        }
+    }
+
+    if(ptIdx == 0) printf("Bins Searched: %i\n", binsSearched);
+    labels[ptIdx] = ptIdx;
+    f1[ptIdx] = true;
+    f2[ptIdx] = false;
+}
+
 /*
 this kernel propogates labels, it must be called in a loop until its flag "m" is false, indicating
 no more changes are pending. 
@@ -952,16 +1113,17 @@ EuclideanClusterExtractor::EuclideanClusterExtractor() {
 };
 
 //perhaps use dynamic parallelism 
-EuclideanClusterExtractor::ObsReturn EuclideanClusterExtractor::extractClusters(GPU_Cloud_F4 pc) {
+EuclideanClusterExtractor::ObsReturn EuclideanClusterExtractor::extractClusters(GPU_Cloud_F4 pc, Bins &bins) {
     ObsReturn empty;
     empty.size = 0;
     if(pc.size == 0) return empty;
+    printf("Partition Length: %f\n", bins.partitionLength);
     //set frontier arrays appropriately [done in build graph]
     //checkStatus(cudaMemsetAsync(f1, 1, sizeof(pc.size)));
     //checkStatus(cudaMemsetAsync(f2, 0, sizeof(pc.size)));
     std::cerr <<"Determining Graph Structure\n";
     //determineGraphStructureKernel<<<ceilDiv(pc.size, MAX_THREADS), MAX_THREADS>>>(pc, tolerance, listStart, bins, binCount, mins, maxes, partitions);
-    determineGraphStructureKernelN2<<<ceilDiv(pc.size, MAX_THREADS), MAX_THREADS>>>(pc, tolerance, listStart);
+    determineGraphStructureKernel<<<ceilDiv(pc.size, MAX_THREADS), MAX_THREADS>>>(pc, tolerance, listStart, bins);
     std::cerr <<"Structure Determined\n";
     thrust::exclusive_scan(thrust::device, listStart, listStart+pc.size+1, listStart, 0);
     checkStatus(cudaGetLastError());
@@ -976,7 +1138,7 @@ EuclideanClusterExtractor::ObsReturn EuclideanClusterExtractor::extractClusters(
     cudaMalloc(&neighborLists, sizeof(int)*totalAdjanecyListsSize);
     //buildGraphKernel<<<ceilDiv(pc.size, MAX_THREADS), MAX_THREADS>>>(pc, tolerance, neighborLists, listStart, labels, f1, f2,
       //                                  bins, binCount, mins, maxes, partitions);
-    buildGraphKernelN2<<<ceilDiv(pc.size, MAX_THREADS), MAX_THREADS>>>(pc, tolerance, neighborLists, listStart, labels, f1, f2);
+    buildGraphKernel<<<ceilDiv(pc.size, MAX_THREADS), MAX_THREADS>>>(pc, tolerance, neighborLists, listStart, labels, f1, f2, bins);
     std::cerr<<"Graph kernel built\n";
     checkStatus(cudaGetLastError());
     checkStatus(cudaDeviceSynchronize());

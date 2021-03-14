@@ -70,6 +70,17 @@ private:
 
 };
 
+/**
+ * \struct bins
+ * \brief struct containing bin info
+ */
+struct Bins {
+    int* data;
+    int size;
+    int partition;
+    float partitionLength;
+};
+
 //Returns true if a cuda error occured and prints an error message
 bool checkStatus(cudaError_t status);
 

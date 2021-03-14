@@ -49,7 +49,7 @@ class EuclideanClusterExtractor {
         EFFECTS:
         - Extracts clusters 
         */
-        ObsReturn extractClusters(GPU_Cloud_F4 pc);
+        ObsReturn extractClusters(GPU_Cloud_F4 pc, Bins &bins);
 
     private:
         //user given model parms

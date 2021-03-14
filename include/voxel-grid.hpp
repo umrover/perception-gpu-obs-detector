@@ -4,15 +4,6 @@
 
 #pragma once
 
-/**
- * \struct bins
- * \brief struct containing bin info
- */
-struct Bins {
-    int* data;
-    int size;
-};
-
 /** 
  * \class voxelGrid
  * \brief class that generates Voxel Grid of point cloud

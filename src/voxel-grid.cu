@@ -17,7 +17,7 @@ __device__ __forceinline__ int hashToBin(sl::float4 &data, pair<float,float>* ex
 * \param pc: GPU point cloud
 * \return void
 */
-__global__ void makeCubeKernel(GPU_Cloud_F4 pc, pair<float,float>* extrema) {
+__global__ void makeCubeKernel(GPU_Cloud_F4 pc, pair<float,float>* extrema, float* partitionLength) {
     if(threadIdx.x >= 6) return; // Only need 6 threads
 
     // Variable Declarations
@@ -101,6 +101,9 @@ __global__ void makeCubeKernel(GPU_Cloud_F4 pc, pair<float,float>* extrema) {
         }
     }
     
+    // Need to grab partition lengt, but could use a better spot
+    if(threadIdx.x == 0) *partitionLength = (extrema[0].second-extrema[0].first);
+
     return;   
 }
 
@@ -120,18 +123,19 @@ __global__ void sortCloud(GPU_Cloud_F4 pc, Bins bins, pair<float,float>* extrema
     sl::float4 pt = pc.data[ptIdx]; // Is it unsafe to read and write so closely?
     
     __syncthreads();
-
-    int binNum = hashToBin(pc.data[ptIdx], extrema, partitions);
-    //printf("Pt: (%f, %f, %f) Bin: %i\n", pt.x, pt.y, pt.z, binNum);
-    pc.data[int(pt.w) + bins.data[binNum]] = pt; // Move point to sorted location in cloud
+    int offset = pt.w;
+    pt.w = hashToBin(pc.data[ptIdx], extrema, partitions);
+    //printf("PtVoxMain: (%f, %f, %f) Bin: %f\n", pt.x, pt.y, pt.z, pt.w);
+    pc.data[offset + bins.data[int(pt.w)]] = pt; // Move point to sorted location in cloud
 
     /*
     if(ptIdx == 0) {
         for(int i = 0; i < pc.size; i++) {
-            printf("Pt: (%f, %f, %f)\n", pc.data[i].x, pc.data[i].y, pc.data[i].z);
+            printf("PtVox: (%f, %f, %f)\n", pc.data[i].x, pc.data[i].y, pc.data[i].z);
         }
     }
     */
+    
 }
 
 /* --- Host Functions --- */
@@ -164,15 +168,21 @@ void VoxelGrid::makeBoundingCube(GPU_Cloud_F4 &pc) {
     checkStatus(cudaMalloc(&extremaValsGPU, sizeof(pair<float,float>)*3));
     checkStatus(cudaMemcpy(extremaValsGPU, extremaVals, sizeof(pair<float,float>)*3, cudaMemcpyHostToDevice));
 
-    makeCubeKernel<<<1,MAX_THREADS>>>(pc, extremaValsGPU);
+    float* partitionLength;
+    cudaMalloc(&partitionLength, sizeof(float));
+
+    makeCubeKernel<<<1,MAX_THREADS>>>(pc, extremaValsGPU, partitionLength);
     checkStatus(cudaGetLastError());
     cudaDeviceSynchronize();
+    cudaMemcpy(&bins.partitionLength, partitionLength, sizeof(float), cudaMemcpyDeviceToHost);
+    bins.partitionLength = bins.partitionLength/partitions;
 }
 
 Bins VoxelGrid::sortByBin(GPU_Cloud_F4 &pc) {
 
     // Initialize bins info
-    bins.size = partitions*partitions*partitions;
+    bins.size = partitions*partitions*partitions+1; // +1 makes sure have total num of points
+    bins.partition = partitions;
     checkStatus(cudaMalloc(&bins.data, sizeof(int) * bins.size));
     thrust::fill(thrust::device, bins.data, bins.data + bins.size, 0);
 

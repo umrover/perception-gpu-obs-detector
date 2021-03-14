@@ -1,7 +1,8 @@
 #include "obs-detector.h"
 #include "common.hpp"
+#include <chrono>
 using namespace std;
-
+using namespace std::chrono;
 ObsDetector::ObsDetector(DataSource source, OperationMode mode, ViewerType viewer) : source(source), mode(mode), viewer(viewer), record(false)
 {
     setupParamaters("");
@@ -61,7 +62,7 @@ void ObsDetector::setupParamaters(std::string parameterFile) {
     //Obs Detecting Algorithm Params
     passZ = new PassThrough('z', 200.0, 8000.0); //7000
     ransacPlane = new RansacPlane(sl::float3(0, 1, 0), 8, 600, 80, cloud_res.area());
-    voxelGrid = new VoxelGrid(9);
+    voxelGrid = new VoxelGrid(10);
     ece = new EuclideanClusterExtractor(150, 30, 0, cloud_res.area(), 9); 
 }
 
@@ -108,7 +109,7 @@ void ObsDetector::update(sl::Mat &frame) {
 
 
 
-
+printf("Test\n");
 
 
     // Sample debug cloud
@@ -131,13 +132,13 @@ void ObsDetector::update(sl::Mat &frame) {
 
 
     voxelGrid->makeBoundingCube(pc);
-    voxelGrid->sortByBin(pc);
+    Bins bins = voxelGrid->sortByBin(pc);
 
 
 
 
 
-
+printf("Fish\n");
 
 
 
@@ -150,7 +151,11 @@ void ObsDetector::update(sl::Mat &frame) {
 
 
     std::cout << "post ransac:" << pc.size << endl;
-    obstacles = ece->extractClusters(pc); 
+    auto grabStart = high_resolution_clock::now();
+    obstacles = ece->extractClusters(pc, bins); 
+    auto grabEnd = high_resolution_clock::now();
+    auto grabDuration = duration_cast<microseconds>(grabEnd - grabStart); 
+    cout << "ECE time: " << (grabDuration.count()/1.0e3) << " ms" << endl; 
 
     // Rendering
     if(mode != OperationMode::SILENT) {
