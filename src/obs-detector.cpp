@@ -57,6 +57,8 @@ void ObsDetector::setupParamaters(std::string parameterFile) {
     defParams.image_size.width = 160;
     defParams.image_size.height = 90;
 
+    bool debug_mode = (mode == OperationMode::DEBUG);
+
     //Obs Detecting Algorithm Params
     passZ = new PassThrough('z', 200.0, 8000.0); //7000
     ransacPlane = new RansacPlane(sl::float3(0, 1, 0), 8, 600, 80, cloud_res.area());
