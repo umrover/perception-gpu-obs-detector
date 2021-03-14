@@ -110,13 +110,13 @@ void ObsDetector::update(sl::Mat &frame) {
 
 
 
-    
+
     // Sample debug cloud
     int size = 4;
     sl::float4 testCPU[size] = {
         {3,2,3,4},
-        {1,2,3,4},
-        {4,6,7,1},
+        {1,1,3,4},
+        {4,5,7,1},
         {5,6,7,1}
     };
     
@@ -148,7 +148,7 @@ void ObsDetector::update(sl::Mat &frame) {
 
 
 
-    //std::cout << "post ransac:" << pc.size << endl;
+    std::cout << "post ransac:" << pc.size << endl;
     obstacles = ece->extractClusters(pc); 
 
     // Rendering
