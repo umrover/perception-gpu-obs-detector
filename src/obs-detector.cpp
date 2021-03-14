@@ -61,7 +61,7 @@ void ObsDetector::setupParamaters(std::string parameterFile) {
     //Obs Detecting Algorithm Params
     passZ = new PassThrough('z', 200.0, 8000.0); //7000
     ransacPlane = new RansacPlane(sl::float3(0, 1, 0), 8, 600, 80, cloud_res.area());
-    voxelGrid = new VoxelGrid(9);
+    voxelGrid = new VoxelGrid(2);
     ece = new EuclideanClusterExtractor(150, 30, 0, cloud_res.area(), 9); 
 }
 
@@ -112,10 +112,12 @@ void ObsDetector::update(sl::Mat &frame) {
 
 
     // Sample debug cloud
-    int size = 2;
+    int size = 4;
     sl::float4 testCPU[size] = {
         {1,-3,-2,4},
-        {2,2,2,4}
+        {2,2,2,4},
+        {0,0,0,4},
+        {0,0,0,1}
     };
     
     GPU_Cloud_F4 testCPUpc {
@@ -128,7 +130,8 @@ void ObsDetector::update(sl::Mat &frame) {
     GPU_Cloud_F4 testPC = { testGPU, size, size};
 
 
-    voxelGrid->buildBins(testPC);
+    voxelGrid->makeBoundingCube(testPC);
+    voxelGrid->sortByBin(testPC);
 
 
 

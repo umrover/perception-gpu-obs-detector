@@ -93,6 +93,11 @@ __device__ float atomicMinFloat (float* addr, float value);
 
 __device__ float atomicMaxFloat (float* addr, float value);
 
+/**
+ * \brief function that given required info will hash point to bin based on coords
+ */
+__device__ int hashToBin(sl::float4 &data, std::pair<float,float>* extrema, int partitions);
+
 #define MAX_THREADS 1024
 
 

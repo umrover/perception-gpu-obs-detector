@@ -23,13 +23,15 @@ __device__ float getData(int axis, int index, sl::float4 *data) {
     return getFloatData(axis, data[index]);    
 }
 
-//Hash function that deteremines bin number
+//Hash function that deteremines bin number 
+
 __device__ int hashToBin(sl::float4 &data, float* min, float* max, int partitions) {
     int cpx = (data.x-min[0])/(max[0]-min[0])*partitions;
     int cpy = (data.y-min[1])/(max[1]-min[1])*partitions;
     int cpz = (data.z-min[2])/(max[2]-min[2])*partitions;
     return cpx*partitions*partitions+cpy*partitions+cpz;
 }
+
 
 
 /**
