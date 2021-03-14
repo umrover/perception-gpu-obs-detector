@@ -4,14 +4,25 @@
 #include <dirent.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include "pcl.hpp"
 
 using namespace std;
 
 class Recorder {
     public:
+        Recorder() : frameNum(0){
+
+        }
+
         Recorder(string dir) : dir(dir), frameNum(0) {
             mkdir(dir.c_str(), 0777);
         }
+
+        void open(string dir) {
+            this->dir = dir;
+            mkdir(dir.c_str(), 0777);
+        }
+
         void writeFrame(sl::Mat &frame) {
             ofstream fout(dir+ "/pc" + to_string(frameNum) + ".pc");
             sl::Mat cpuFrame; 
@@ -79,31 +90,38 @@ class Reader {
             }
 	    }
 	
-        void load(int i, sl::Mat &zed) {
+        void load(int i, sl::Mat &zed, bool pcl) {
             std::string pcd_name = pcd_names[i];
  	        std::string full_path = dir + std::string("/") + pcd_name;
-            ifstream fin(full_path);
+            
+            if(pcl) {
+                pcl::PointCloud<pcl::PointXYZRGB>::Ptr pc_pcl(new pcl::PointCloud<pcl::PointXYZRGB>);
+                loadPCD(pc_pcl, full_path);
+                PclToZed(zed, pc_pcl);
+            } else {
+                ifstream fin(full_path);
+                
+                sl::Resolution r = zed.getResolution();
+                int width = r.width;
 
-            sl::Resolution r = zed.getResolution();
-            int width = r.width;
-
-            std::string xs, ys, zs, cs;
-            int q = 0;
-            while(fin >> xs >> ys >> zs >> cs) {
-                if(cs!="nan" && cs != "-inf" && cs != "inf") {
+                std::string xs, ys, zs, cs;
+                int q = 0;
+                while(fin >> xs >> ys >> zs >> cs) {
 
                     float px = std::stof(xs);
                     float py = std::stof(ys);
                     float pz = std::stof(zs);
                     float pw = std::stof(cs);
 
+                    if(isnan(pw) || !isfinite(pw) || isnan(px) || !isfinite(px) ) pw = 0.0;
+                    //cout << "color: " << pw << endl;
+
                     zed.setValue(q%width, q/width, sl::float4(px, py, pz, pw));
                     q++;
 
-                } 
+                }
+                zed.updateGPUfromCPU();
             }
-            zed.updateGPUfromCPU();
-
             
         }
         

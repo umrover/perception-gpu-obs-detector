@@ -25,73 +25,25 @@
 
 
 using namespace std;
-#define PCD_FOLDER "../data"
-
-vector<string> pcd_names;
-
-/*
-void readData() {	
-	map<int, string> fData;
-
-	//Long-winded directory opening (no glob, sad)
-	DIR * pcd_dir;
-	pcd_dir = opendir(PCD_FOLDER);
-	if (NULL == pcd_dir) std::cerr<<"Input folder not exist\n";    
-	
-	struct dirent *dp = NULL;
-	do{
-    	if ((dp = readdir(pcd_dir)) != NULL) {
-      		std::string file_name(dp->d_name);
-      		std::cout<<"file_name is "<<file_name<<std::endl;
-      		// the lengh of the tail str is at least 4
-      		if (file_name.size() < 5) continue; //make it 5 to get the single digit
-      		pcd_names.push_back(file_name);
-			
-			int s = file_name.find_first_of("0123456789");
-			int l = file_name.find(".");
-			string keyS = file_name.substr(s,l-s );
-			int key = stoi(keyS);
-			//cout << key << endl;
-			fData[key] = file_name;
-      
-    	}
- 	} while (dp != NULL);
-	std::sort(pcd_names.begin(), pcd_names.end());
-
-	pcd_names.clear();
-	for(auto i : fData) {
-		pcd_names.push_back(i.second);
-		cout << i.second << endl;
-	}
-	
-}
 
 
-void DownsampleFilter() {
-
-   pcl::PointCloud<pcl::PointXYZRGB>::Ptr downsampled(new pcl::PointCloud<pcl::PointXYZRGB>(pc->width/2, pc->height/2));
-   for(size_t y = 0; y < pc->height/2; y++) {
-		for(size_t x = 0; x < pc->width/2; x++) {
-			pcl::PointXYZRGB p = pc->at(x*2, y*2);
-			downsampled->at(x, y) = p;
-		}
-   }
-   pc = downsampled;
-
-}
-
-void setPointCloud(int i) {
- 	std::string pcd_name = pcd_names[i];
- 	std::string full_path = PCD_FOLDER + std::string("/") + pcd_name;
-	cout << "[" << i << "] " << "Loading " << full_path << endl;
-  	if (pcl::io::loadPCDFile<pcl::PointXYZRGB> (full_path, *pc) == -1){ //* load the file 
+void loadPCD(pcl::PointCloud<pcl::PointXYZRGB>::Ptr & pc, std::string full_path) {
+	if (pcl::io::loadPCDFile<pcl::PointXYZRGB> (full_path, *pc) == -1){ //* load the file 
     	std::cerr << "Couldn't read file\n";
 		PCL_ERROR ("Couldn't read file test_pcd.pcd \n"); 
   	}
 	cerr << "> Loaded point cloud of " << pc->width << "*" << pc->height << endl;
-	DownsampleFilter();
-	cout << "Post-downsample: " << pc->width << "*" << pc->height << endl;
-} */
+
+	//Reduce resolution
+	pcl::PointCloud<pcl::PointXYZRGB>::Ptr downsampled(new pcl::PointCloud<pcl::PointXYZRGB>(pc->width/2, pc->height/2));
+	for(size_t y = 0; y < pc->height/2; y++) {
+			for(size_t x = 0; x < pc->width/2; x++) {
+				pcl::PointXYZRGB p = pc->at(x*2, y*2);
+				downsampled->at(x, y) = p;
+			}
+	}
+	pc = downsampled;
+}
 
 inline float convertColor(float colorIn) {
     uint32_t color_uint = *(uint32_t *) & colorIn;
@@ -154,10 +106,10 @@ shared_ptr<pcl::visualization::PCLVisualizer> createRGBVisualizer(pcl::PointClou
     // Open 3D pclViewer and add point clousl::ERROR_CODE_ 
     shared_ptr<pcl::visualization::PCLVisualizer> pclViewer(
       new pcl::visualization::PCLVisualizer("PCL 3D pclViewer")); //This is a smart pointer so no need to worry ab deleteing it
-    pclViewer->setBackgroundColor(0.12, 0.12, 0.12);
+    pclViewer->setBackgroundColor(0.87, 0.9, 0.91);
     pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb(pt_cloud_ptr);
     pclViewer->addPointCloud<pcl::PointXYZRGB>(pt_cloud_ptr, rgb);
-    pclViewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1.5);
+    pclViewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 5.5);
     pclViewer->addCoordinateSystem(1.0);
     pclViewer->initCameraParameters();
     pclViewer->setCameraPosition(0,0,-800,0,-1,0);

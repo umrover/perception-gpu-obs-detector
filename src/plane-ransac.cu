@@ -128,6 +128,7 @@ EFFECTS:
     - Selects the optimal model (the one with the greatest inlier count)
     - Outputs the points of this model 
 */
+// optimalMOdel out = { p1.x, p1.y, p1.z, p2.x, p2.y, p2.z, p3.x, p3.y, p3.z}
 __global__ void selectOptimalRansacModel(GPU_Cloud_F4 pc, float* inlierCounts, int* modelPoints, float* optimalModelOut, int iterations, int* optimalModelIndex) {
     
     __shared__ float inlierCountsLocal[MAX_THREADS];
@@ -414,7 +415,7 @@ RansacPlane::Plane RansacPlane::computeModel(GPU_Cloud_F4 &pc) {
     int sizeCpu;
     cudaMemcpy(&sizeCpu, size, sizeof(int), cudaMemcpyDeviceToHost);
     tmpCloud.size = sizeCpu;
-    copyCloud(pc, tmpCloud);
+    if(sizeCpu > 0) copyCloud(pc, tmpCloud);
     cudaFree(tmpCloud.data); //exp
    // pc.size = 320/2*180/2;
     //std::cout << sizeCpu << std::endl;

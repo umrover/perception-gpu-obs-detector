@@ -12,9 +12,9 @@
 
 /*
  *** Determines where to input clouds for obstacle detection ***
- *      SOURCE_ZED: inputs clouds directly from a connected ZED
- *      SOURCE_GPUMEM: receives a pointer to cloud GPU memory from external source
- *      SOURCE_FILESYSTEM: reads .pc files from specified location
+ *      ZED: inputs clouds directly from a connected ZED
+ *      GPUMEM: receives a pointer to cloud GPU memory from external source
+ *      FILESYSTEM: reads .pc files from specified location
  */
 enum class DataSource {ZED, GPUMEM, FILESYSTEM}; 
 
@@ -36,21 +36,20 @@ class ObsDetector {
         //Destructor 
         ~ObsDetector();
 
-        //Start recording frames from ZED
-        void startRecording(std::string directory);
-
-        //Stop recording frames (this does not need to be called if you want to record until program exit)
-        void stopRecording();
-
         // Grabs the next frame from either file or zed and performs an obstacle detection
         void update();
 
         // This is the underlying method called by update(), if DataSource::GPUMEM is selected, call this one with the frame
         void update(sl::Mat &frame);
 
-        //Do viewer update tick, it may be desirable to launch this in its own thread 
+        //Do viewer update tick, it may be desirable to call this in its own thread 
         void spinViewer();
 
+        //Start recording frames from ZED
+        void startRecording(std::string directory);
+
+        //Stop recording frames (this does not need to be called if you want to record until program exit)
+        void stopRecording();
 
     private:
 
@@ -71,7 +70,7 @@ class ObsDetector {
         DataSource source;
         OperationMode mode;
         ViewerType viewer;
-        bool record;
+        bool record = false;
 
         //Detection algorithms 
         PassThrough *passZ;
@@ -89,6 +88,7 @@ class ObsDetector {
         EuclideanClusterExtractor::ObsReturn obstacles;
 
         //Other
+        Recorder recorder;
         int frameNum = 0;
         
 };
