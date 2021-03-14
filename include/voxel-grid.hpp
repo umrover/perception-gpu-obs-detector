@@ -18,15 +18,16 @@ public:
     VoxelGrid(int partitions);
 
     /**
-     * \brief given a PC finds creates the structure of the voxel grid
+     * \brief given a PC finds the 6 extrema that define a bounding cube
      * \param pc: GPU point cloud
      * \return void
      */
-    void buildBins(GPU_Cloud_F4 &pc);
+    void makeBoundingCube(GPU_Cloud_F4 &pc);
 
 private:
 
     int partitions;
+    std::pair<float,float>* extremaValsGPU;
 
 };
 

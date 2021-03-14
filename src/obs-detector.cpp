@@ -112,12 +112,10 @@ void ObsDetector::update(sl::Mat &frame) {
 
 
     // Sample debug cloud
-    int size = 4;
+    int size = 2;
     sl::float4 testCPU[size] = {
-        {3,2,3,4},
-        {1,1,3,4},
-        {4,5,7,1},
-        {5,6,7,1}
+        {1,-3,-2,4},
+        {2,2,2,4}
     };
     
     GPU_Cloud_F4 testCPUpc {
