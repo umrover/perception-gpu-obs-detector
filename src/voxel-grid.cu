@@ -2,6 +2,7 @@
 
 using namespace std;
 
+// Please get rid of this and move this into common
 __device__ __forceinline__ int hashToBin(sl::float4 &data, pair<float,float>* extrema, int partitions) {
     int cpx = (data.x-extrema[0].first)/(extrema[0].second-extrema[0].first)*partitions;
     int cpy = (data.y-extrema[1].first)/(extrema[1].second-extrema[1].first)*partitions;
@@ -108,18 +109,29 @@ __global__ void hashToBinsKernel(GPU_Cloud_F4 pc, Bins bins, pair<float,float>* 
     if(ptIdx >= pc.size) return;
 
     int binNum = hashToBin(pc.data[ptIdx], extrema, partitions);
-    printf("BinNum: %i\n", binNum);
+    
     pc.data[ptIdx].w = atomicAdd(&bins.data[binNum],1);
-    printf("Order: %f\n", pc.data[ptIdx].w);
+}
+
+__global__ void sortCloud(GPU_Cloud_F4 pc, Bins bins, pair<float,float>* extrema, int partitions) {
+    int ptIdx = threadIdx.x + blockIdx.x * blockDim.x;
+    if(ptIdx >= pc.size) return;
+
+    sl::float4 pt = pc.data[ptIdx]; // Is it unsafe to read and write so closely?
+    
     __syncthreads();
 
+    int binNum = hashToBin(pc.data[ptIdx], extrema, partitions);
+    //printf("Pt: (%f, %f, %f) Bin: %i\n", pt.x, pt.y, pt.z, binNum);
+    pc.data[int(pt.w) + bins.data[binNum]] = pt; // Move point to sorted location in cloud
+
+    /*
     if(ptIdx == 0) {
-        for(int i = 0; i < bins.size; i++) {
-            printf("Bin %i: %i\n", i, bins.data[i]);
+        for(int i = 0; i < pc.size; i++) {
+            printf("Pt: (%f, %f, %f)\n", pc.data[i].x, pc.data[i].y, pc.data[i].z);
         }
     }
-
-    __syncthreads();
+    */
 }
 
 /* --- Host Functions --- */
@@ -164,7 +176,18 @@ Bins VoxelGrid::sortByBin(GPU_Cloud_F4 &pc) {
     checkStatus(cudaMalloc(&bins.data, sizeof(int) * bins.size));
     thrust::fill(thrust::device, bins.data, bins.data + bins.size, 0);
 
+    // Hash each point to a bin
     hashToBinsKernel<<<ceilDiv(pc.size, MAX_THREADS), MAX_THREADS>>>(pc, bins, extremaValsGPU, partitions);
+    checkStatus(cudaGetLastError());
+    cudaDeviceSynchronize();
+
+    // Make data contain starting values of points in point cloud
+    thrust::exclusive_scan(thrust::device, bins.data, bins.data + bins.size, bins.data);
+    
+    // Sorts GPU cloud points into groups based on bins they hashed to
+    sortCloud<<<ceilDiv(pc.size, MAX_THREADS), MAX_THREADS>>>(pc, bins, extremaValsGPU, partitions);
+    checkStatus(cudaGetLastError());
+    cudaDeviceSynchronize();
     
     return bins;
 }
