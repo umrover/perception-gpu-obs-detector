@@ -35,7 +35,8 @@ class WithinBounds {
 
 //Execute pass through
 void PassThrough::run(GPU_Cloud_F4 &cloud){
-
+    if(cloud.size == 0) return;
+    
     //Instansiate a predicate functor and copy the contents of the cloud
     WithinBounds pred(min, max, axis);
     thrust::device_vector<sl::float4> buffer(cloud.data, cloud.data+cloud.size);

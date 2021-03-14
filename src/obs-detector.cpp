@@ -18,12 +18,25 @@ ObsDetector::ObsDetector(DataSource source, OperationMode mode, ViewerType viewe
     if(mode != OperationMode::SILENT && viewer == ViewerType::PCLV) {
         pcl::PointCloud<pcl::PointXYZRGB>::Ptr pc_pcl(new pcl::PointCloud<pcl::PointXYZRGB>);
         pclViewer = createRGBVisualizer(pc_pcl);
+        pclViewer->registerKeyboardCallback(&ObsDetector::pclKeyCallback, *this);
     } else if(mode != OperationMode::SILENT && viewer == ViewerType::GL) {
         int argc = 1;
         char *argv[1] = {(char*)"Window"};
         glViewer.init(argc, argv, defParams);
     }
 };
+
+void ObsDetector::pclKeyCallback(const pcl::visualization::KeyboardEvent &event, void* junk) {
+    if (event.getKeySym() == "d" && event.keyDown()){
+        frameNum++;
+    }
+    if (event.getKeySym() == "a" && event.keyDown()){
+        frameNum--;
+    }
+    if (event.getKeySym() == "p" && event.keyUp()){
+        framePlay = !framePlay;
+    }
+}
 
 //TODO: Make it read params from a file
 void ObsDetector::setupParamaters(std::string parameterFile) {
@@ -48,7 +61,7 @@ void ObsDetector::setupParamaters(std::string parameterFile) {
 
     //Obs Detecting Algorithm Params
     passZ = new PassThrough('z', 200.0, 8000.0); //7000
-    ransacPlane = new RansacPlane(sl::float3(0, 1, 0), 4, 400, 160, cloud_res.area());
+    ransacPlane = new RansacPlane(sl::float3(0, 1, 0), 8, 600, 80, cloud_res.area());
     ece = new EuclideanClusterExtractor(150, 30, 0, cloud_res.area(), 9); 
 }
 
@@ -82,12 +95,10 @@ void ObsDetector::update(sl::Mat &frame) {
     pc = getRawCloud(frame);
 
     // Processing 
-    
     passZ->run(pc);
-    std::cout << "pre ransac:" << pc.size << endl;
+    //std::cout << "pre ransac:" << pc.size << endl;
     ransacPlane->computeModel(pc, true);
-    std::cout << "post ransac:" << pc.size << endl;
-
+    //std::cout << "post ransac:" << pc.size << endl;
     obstacles = ece->extractClusters(pc); 
 
     // Rendering
@@ -97,7 +108,7 @@ void ObsDetector::update(sl::Mat &frame) {
             glViewer.updatePointCloud(orig);
         } else {
            pcl::PointCloud<pcl::PointXYZRGB>::Ptr pc_pcl(new pcl::PointCloud<pcl::PointXYZRGB>);
-           ZedToPcl(pc_pcl, orig);
+           ZedToPcl(pc_pcl, frame);
            pclViewer->updatePointCloud(pc_pcl); //update the viewer 
         }
     }
@@ -107,7 +118,7 @@ void ObsDetector::update(sl::Mat &frame) {
         recorder.writeFrame(frame);
     }
 
-    frameNum++;
+    if(framePlay) frameNum++;
 }
 
 void ObsDetector::spinViewer() {
@@ -150,11 +161,13 @@ void ObsDetector::startRecording(std::string directory) {
 
 
 int main() {
-    ObsDetector obs(DataSource::FILESYSTEM, OperationMode::DEBUG, ViewerType::PCLV);
+    ObsDetector obs(DataSource::FILESYSTEM, OperationMode::DEBUG, ViewerType::GL);
     //obs.startRecording("test-record3");
-    //std::thread viewerTick(viewerAsync);
+    //obs.update();
+    std::thread viewerTick( [&]{while(true) { obs.update();} });
+    
     while(true) {
-        obs.update();
+        //obs.update();
         obs.spinViewer();
     }
 

@@ -65,6 +65,7 @@ class ObsDetector {
         //Viwers
         GLViewer glViewer;
         shared_ptr<pcl::visualization::PCLVisualizer> pclViewer; 
+        void pclKeyCallback(const pcl::visualization::KeyboardEvent &event, void* junk);
 
         //Operation paramaters
         DataSource source;
@@ -90,5 +91,6 @@ class ObsDetector {
         //Other
         Recorder recorder;
         int frameNum = 0;
+        bool framePlay = true;
         
 };
