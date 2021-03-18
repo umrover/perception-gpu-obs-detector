@@ -142,8 +142,8 @@ __global__ void sortCloud(GPU_Cloud_F4 pc, Bins bins, pair<float,float>* extrema
 
 VoxelGrid::VoxelGrid(int partitions) : partitions{partitions} {}
 
-void VoxelGrid::makeBoundingCube(GPU_Cloud_F4 &pc) {
-    
+Bins VoxelGrid::run(GPU_Cloud_F4 &pc) {
+
     // Create place to store maxes
     thrust::pair< thrust::device_ptr<sl::float4>, thrust::device_ptr<sl::float4>> extrema[3];
 
@@ -176,9 +176,6 @@ void VoxelGrid::makeBoundingCube(GPU_Cloud_F4 &pc) {
     cudaDeviceSynchronize();
     cudaMemcpy(&bins.partitionLength, partitionLength, sizeof(float), cudaMemcpyDeviceToHost);
     bins.partitionLength = bins.partitionLength/partitions;
-}
-
-Bins VoxelGrid::sortByBin(GPU_Cloud_F4 &pc) {
 
     // Initialize bins info
     bins.size = partitions*partitions*partitions+1; // +1 makes sure have total num of points

@@ -130,9 +130,7 @@ printf("Test\n");
     cudaMemcpy(testGPU, testCPU, sizeof(sl::float4)*size, cudaMemcpyHostToDevice);
     GPU_Cloud_F4 testPC = { testGPU, size, size};
 
-
-    voxelGrid->makeBoundingCube(pc);
-    Bins bins = voxelGrid->sortByBin(pc);
+    Bins bins = voxelGrid->run(pc);
 
 
 

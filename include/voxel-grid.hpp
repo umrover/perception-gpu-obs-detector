@@ -18,18 +18,12 @@ public:
     VoxelGrid(int partitions);
 
     /**
-     * \brief given a PC finds the 6 extrema that define a bounding cube
-     * \param pc: GPU point cloud
-     * \return void
-     */
-    void makeBoundingCube(GPU_Cloud_F4 &pc);
-
-    /**
-     * \brief given a PC sort the GPU cloud according to how points hash to cube
+     * \brief given a PC finds the 6 extrema that define a bounding cube. 
+     * Then sort the GPU cloud according to how points hash to cube
      * \param pc; GPU point cloud will be modified by in place sort
      * \return structure containing start value of each bin in sorted GPU cloud
      */
-    Bins sortByBin(GPU_Cloud_F4 &pc);
+    Bins run(GPU_Cloud_F4 &pc);
 
 private:
 
