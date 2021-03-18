@@ -36,12 +36,6 @@ class EuclideanClusterExtractor {
         */
         EuclideanClusterExtractor(float tolerance, int minSize, float maxSize, size_t cloudArea, int partitions);
         EuclideanClusterExtractor();
-
-        void findBoundingBox(GPU_Cloud_F4 &pc);
-
-        void buildBins(GPU_Cloud_F4 &pc);
-
-        void freeBins();
         
         ~EuclideanClusterExtractor();
 
