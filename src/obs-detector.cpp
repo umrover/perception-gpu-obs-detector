@@ -1,5 +1,8 @@
 #include "obs-detector.h"
+#include "common.hpp"
+#include <chrono>
 using namespace std;
+using namespace std::chrono;
 
 ObsDetector::ObsDetector(DataSource source, OperationMode mode, ViewerType viewer) : source(source), mode(mode), viewer(viewer), record(false)
 {
@@ -60,6 +63,7 @@ void ObsDetector::setupParamaters(std::string parameterFile) {
     //Obs Detecting Algorithm Params
     passZ = new PassThrough('z', 200.0, 8000.0); //7000
     ransacPlane = new RansacPlane(sl::float3(0, 1, 0), 8, 600, 80, cloud_res.area());
+    voxelGrid = new VoxelGrid(10);
     ece = new EuclideanClusterExtractor(150, 30, 0, cloud_res.area(), 9); 
 }
 
@@ -96,8 +100,54 @@ void ObsDetector::update(sl::Mat &frame) {
     passZ->run(pc);
     //std::cout << "pre ransac:" << pc.size << endl;
     ransacPlane->computeModel(pc, true);
+    
+    
+    
+
+
+
+
+
+
+    // Voxel Grid Testing Code
+    /*
+    int size = 4;
+    sl::float4 testCPU[size] = {
+        {1,-3,-2,4},
+        {2,2,2,4},
+        {0,0,0,4},
+        {0,0,0,1}
+    };
+    
+    GPU_Cloud_F4 testCPUpc {
+        testCPU, size, size
+    };
+    
+    sl::float4* testGPU;
+    cudaMalloc(&testGPU, sizeof(sl::float4)*size);
+    cudaMemcpy(testGPU, testCPU, sizeof(sl::float4)*size, cudaMemcpyHostToDevice);
+    GPU_Cloud_F4 testPC = { testGPU, size, size};
+    */
+    Bins bins;
+
+    #if VOXEL
+        bins = voxelGrid->run(pc);
+    #endif
+
+
+
+
+
+
+
+
+
     //std::cout << "post ransac:" << pc.size << endl;
-    obstacles = ece->extractClusters(pc); 
+    auto grabStart = high_resolution_clock::now();
+    obstacles = ece->extractClusters(pc, bins); 
+    auto grabEnd = high_resolution_clock::now();
+    auto grabDuration = duration_cast<microseconds>(grabEnd - grabStart); 
+    //cout << "ECE time: " << (grabDuration.count()/1.0e3) << " ms" << endl; 
 
     // Rendering
     if(mode != OperationMode::SILENT) {
@@ -159,7 +209,7 @@ void ObsDetector::startRecording(std::string directory) {
 
 
 int main() {
-    ObsDetector obs(DataSource::FILESYSTEM, OperationMode::DEBUG, ViewerType::GL);
+    ObsDetector obs(DataSource::ZED, OperationMode::DEBUG, ViewerType::GL);
     //obs.startRecording("test-record3");
     //obs.update();
     std::thread viewerTick( [&]{while(true) { obs.update();} });
