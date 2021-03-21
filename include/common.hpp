@@ -10,6 +10,8 @@
 #define HALF_ROVER 584
 #define VIEWER_BGR_COLOR 2.14804915479e-38
 
+// Temporary #define we can use until voxel grid is fully implemented
+#define VOXEL 1
 
 //GPU point cloud struct that can be passed to cuda kernels and represents a point cloud
 struct GPU_Cloud_F4 {
@@ -106,8 +108,17 @@ __device__ float atomicMaxFloat (float* addr, float value);
 
 /**
  * \brief function that given required info will hash point to bin based on coords
+ * \param data: float4 with x,y,z data of a point
+ * \param extrema: array with pairs of maxes and mins of each axis
+ * \param partitions: number of divisions on each axis
+ * \return int containing the bin number a point hashed to
  */
-__device__ int hashToBin(sl::float4 &data, std::pair<float,float>* extrema, int partitions);
+__device__ __forceinline__ int hashToBin (sl::float4 &data, std::pair<float,float>* extrema, int partitions) {
+    int cpx = (data.x-extrema[0].first)/(extrema[0].second-extrema[0].first)*partitions;
+    int cpy = (data.y-extrema[1].first)/(extrema[1].second-extrema[1].first)*partitions;
+    int cpz = (data.z-extrema[2].first)/(extrema[2].second-extrema[2].first)*partitions;
+    return cpx*partitions*partitions+cpy*partitions+cpz;
+}
 
 #define MAX_THREADS 1024
 

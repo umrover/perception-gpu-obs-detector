@@ -23,15 +23,6 @@ __device__ float getData(int axis, int index, sl::float4 *data) {
     return getFloatData(axis, data[index]);    
 }
 
-//Hash function that deteremines bin number 
-
-__device__ int hashToBin(sl::float4 &data, float* min, float* max, int partitions) {
-    int cpx = (data.x-min[0])/(max[0]-min[0])*partitions;
-    int cpy = (data.y-min[1])/(max[1]-min[1])*partitions;
-    int cpz = (data.z-min[2])/(max[2]-min[2])*partitions;
-    return cpx*partitions*partitions+cpy*partitions+cpz;
-}
-
 __global__ void determineGraphStructureKernelN2(GPU_Cloud_F4 pc, float tolerance, int* listStart) {
     int ptIdx = blockIdx.x * blockDim.x + threadIdx.x;
     if(ptIdx >= pc.size) return;
@@ -436,13 +427,17 @@ EuclideanClusterExtractor::ObsReturn EuclideanClusterExtractor::extractClusters(
     ObsReturn empty;
     empty.size = 0;
     if(pc.size == 0) return empty;
+    std::cerr<<"VOX Val: "<<VOXEL<<std::endl;
+    // Find the structure for adjacency list of all points
     printf("Partition Length: %f\n", bins.partitionLength);
-    //set frontier arrays appropriately [done in build graph]
-    //checkStatus(cudaMemsetAsync(f1, 1, sizeof(pc.size)));
-    //checkStatus(cudaMemsetAsync(f2, 0, sizeof(pc.size)));
     std::cerr <<"Determining Graph Structure\n";
-    //determineGraphStructureKernel<<<ceilDiv(pc.size, MAX_THREADS), MAX_THREADS>>>(pc, tolerance, listStart, bins, binCount, mins, maxes, partitions);
-    determineGraphStructureKernel<<<ceilDiv(pc.size, MAX_THREADS), MAX_THREADS>>>(pc, tolerance, listStart, bins);
+    #if !VOXEL
+        determineGraphStructureKernelN2<<<ceilDiv(pc.size, MAX_THREADS), MAX_THREADS>>>(pc, tolerance, listStart);
+    #endif
+    #if VOXEL
+        determineGraphStructureKernel<<<ceilDiv(pc.size, MAX_THREADS), MAX_THREADS>>>(pc, tolerance, listStart, bins);
+    #endif
+    
     std::cerr <<"Structure Determined\n";
     thrust::exclusive_scan(thrust::device, listStart, listStart+pc.size+1, listStart, 0);
     checkStatus(cudaGetLastError());
@@ -455,9 +450,15 @@ EuclideanClusterExtractor::ObsReturn EuclideanClusterExtractor::extractClusters(
     //std::cout << "total adj size: " << totalAdjanecyListsSize << std::endl;
     std::cerr<<"Building graph kernel\n";
     cudaMalloc(&neighborLists, sizeof(int)*totalAdjanecyListsSize);
-    //buildGraphKernel<<<ceilDiv(pc.size, MAX_THREADS), MAX_THREADS>>>(pc, tolerance, neighborLists, listStart, labels, f1, f2,
-      //                                  bins, binCount, mins, maxes, partitions);
-    buildGraphKernel<<<ceilDiv(pc.size, MAX_THREADS), MAX_THREADS>>>(pc, tolerance, neighborLists, listStart, labels, f1, f2, bins);
+
+    // Populate adjacency list structure
+    #if !VOXEL
+        buildGraphKernelN2<<<ceilDiv(pc.size, MAX_THREADS), MAX_THREADS>>>(pc, tolerance, neighborLists, listStart, labels, f1, f2);
+    #endif
+    #if VOXEL
+        buildGraphKernel<<<ceilDiv(pc.size, MAX_THREADS), MAX_THREADS>>>(pc, tolerance, neighborLists, listStart, labels, f1, f2, bins);
+    #endif
+
     std::cerr<<"Graph kernel built\n";
     checkStatus(cudaGetLastError());
     checkStatus(cudaDeviceSynchronize());

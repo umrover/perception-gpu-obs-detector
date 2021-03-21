@@ -2,14 +2,6 @@
 
 using namespace std;
 
-// Please get rid of this and move this into common
-__device__ __forceinline__ int hashToBin(sl::float4 &data, pair<float,float>* extrema, int partitions) {
-    int cpx = (data.x-extrema[0].first)/(extrema[0].second-extrema[0].first)*partitions;
-    int cpy = (data.y-extrema[1].first)/(extrema[1].second-extrema[1].first)*partitions;
-    int cpz = (data.z-extrema[2].first)/(extrema[2].second-extrema[2].first)*partitions;
-    return cpx*partitions*partitions+cpy*partitions+cpz;
-}
-
 /* --- Kernels --- */
 /**
 * \brief adds offsets to extrema to make sure all are evenly spaced

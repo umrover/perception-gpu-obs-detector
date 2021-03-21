@@ -3,6 +3,7 @@
 #include <chrono>
 using namespace std;
 using namespace std::chrono;
+
 ObsDetector::ObsDetector(DataSource source, OperationMode mode, ViewerType viewer) : source(source), mode(mode), viewer(viewer), record(false)
 {
     setupParamaters("");
@@ -108,11 +109,8 @@ void ObsDetector::update(sl::Mat &frame) {
 
 
 
-
-printf("Test\n");
-
-
-    // Sample debug cloud
+    // Voxel Grid Testing Code
+    /*
     int size = 4;
     sl::float4 testCPU[size] = {
         {1,-3,-2,4},
@@ -129,14 +127,12 @@ printf("Test\n");
     cudaMalloc(&testGPU, sizeof(sl::float4)*size);
     cudaMemcpy(testGPU, testCPU, sizeof(sl::float4)*size, cudaMemcpyHostToDevice);
     GPU_Cloud_F4 testPC = { testGPU, size, size};
+    */
+    Bins bins;
 
-    Bins bins = voxelGrid->run(pc);
-
-
-
-
-
-printf("Fish\n");
+    #if VOXEL
+        bins = voxelGrid->run(pc);
+    #endif
 
 
 
@@ -146,14 +142,12 @@ printf("Fish\n");
 
 
 
-
-
-    std::cout << "post ransac:" << pc.size << endl;
+    //std::cout << "post ransac:" << pc.size << endl;
     auto grabStart = high_resolution_clock::now();
     obstacles = ece->extractClusters(pc, bins); 
     auto grabEnd = high_resolution_clock::now();
     auto grabDuration = duration_cast<microseconds>(grabEnd - grabStart); 
-    cout << "ECE time: " << (grabDuration.count()/1.0e3) << " ms" << endl; 
+    //cout << "ECE time: " << (grabDuration.count()/1.0e3) << " ms" << endl; 
 
     // Rendering
     if(mode != OperationMode::SILENT) {

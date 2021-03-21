@@ -20,7 +20,7 @@ public:
     /**
      * \brief given a PC finds the 6 extrema that define a bounding cube. 
      * Then sort the GPU cloud according to how points hash to cube
-     * \param pc; GPU point cloud will be modified by in place sort
+     * \param pc: GPU point cloud will be modified by in place sort
      * \return structure containing start value of each bin in sorted GPU cloud
      */
     Bins run(GPU_Cloud_F4 &pc);
