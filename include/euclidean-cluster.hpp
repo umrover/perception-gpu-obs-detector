@@ -36,8 +36,6 @@ class EuclideanClusterExtractor {
         */
         EuclideanClusterExtractor(float tolerance, int minSize, float maxSize, size_t cloudArea, int partitions);
         EuclideanClusterExtractor();
-        
-        ~EuclideanClusterExtractor();
 
         /*
         EFFECTS:

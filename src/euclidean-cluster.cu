@@ -412,15 +412,9 @@ EuclideanClusterExtractor::EuclideanClusterExtractor(float tolerance, int minSiz
     cudaMalloc(&f2, sizeof(bool)*cloudArea);
     cudaMalloc(&stillGoing, sizeof(bool));
 
-    //Nearest Neighbor Bins
-    checkStatus(cudaMalloc(&mins, sizeof(int) * 3));
-    checkStatus(cudaMalloc(&maxes, sizeof(int) * 3));
-
-   // colorClusters<<<ceilDiv(pc.size, MAX_THREADS), MAX_THREADS>>>(pc, nullptr);
 }
-EuclideanClusterExtractor::EuclideanClusterExtractor() {
 
-};
+EuclideanClusterExtractor::EuclideanClusterExtractor() {}
 
 //perhaps use dynamic parallelism 
 EuclideanClusterExtractor::ObsReturn EuclideanClusterExtractor::extractClusters(GPU_Cloud_F4 pc, Bins &bins) {
@@ -438,17 +432,13 @@ EuclideanClusterExtractor::ObsReturn EuclideanClusterExtractor::extractClusters(
         determineGraphStructureKernel<<<ceilDiv(pc.size, MAX_THREADS), MAX_THREADS>>>(pc, tolerance, listStart, bins);
     #endif
     
-    std::cerr <<"Structure Determined\n";
     thrust::exclusive_scan(thrust::device, listStart, listStart+pc.size+1, listStart, 0);
     checkStatus(cudaGetLastError());
     checkStatus(cudaDeviceSynchronize());
+    
+    // Create helpful variables
     int totalAdjanecyListsSize;
-    /*//debugint* temp = (int*) malloc(sizeof(int)*(pc.size+1));
-    checkStatus(cudaMemcpy(temp, listStart, sizeof(int)*(pc.size+1), cudaMemcpyDeviceToHost));
-    for(int i = 0; i < pc.size+1; i++) std::cout << "ex scan: " << temp[i] << std::endl; */
     checkStatus(cudaMemcpy(&totalAdjanecyListsSize, &listStart[pc.size], sizeof(int), cudaMemcpyDeviceToHost));
-    //std::cout << "total adj size: " << totalAdjanecyListsSize << std::endl;
-    std::cerr<<"Building graph kernel\n";
     cudaMalloc(&neighborLists, sizeof(int)*totalAdjanecyListsSize);
 
     // Populate adjacency list structure
@@ -459,7 +449,7 @@ EuclideanClusterExtractor::ObsReturn EuclideanClusterExtractor::extractClusters(
         buildGraphKernel<<<ceilDiv(pc.size, MAX_THREADS), MAX_THREADS>>>(pc, tolerance, neighborLists, listStart, labels, f1, f2, bins);
     #endif
 
-    std::cerr<<"Graph kernel built\n";
+    //std::cerr<<"Graph kernel built\n";
     checkStatus(cudaGetLastError());
     checkStatus(cudaDeviceSynchronize());
     
@@ -610,9 +600,4 @@ EuclideanClusterExtractor::ObsReturn EuclideanClusterExtractor::extractClusters(
     obsReturn.minZ = minZCPU;
     obsReturn.maxZ = maxZCPU;
     return obsReturn;
-}
-
-EuclideanClusterExtractor::~EuclideanClusterExtractor() {
-    checkStatus(cudaFree(mins));
-    checkStatus(cudaFree(maxes));
 }
