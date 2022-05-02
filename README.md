@@ -5,6 +5,8 @@ This CUDA-based module performs real time obstacle detection for the rover
 and sends LCM messages containing information about obstacles. Requires an NVIDIA 
 GPU and CUDA installation to run.
 
+Code walkthrough: https://youtube.com/playlist?list=PLj5rOuXit19mCtakn21m11At3zjgEycnO
+
 ## Dev Enviornment Setup
 
 Follow the install guide for your desired workflow. 
